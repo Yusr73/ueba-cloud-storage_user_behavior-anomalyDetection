@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ppp_postgres
+    environment:
+      POSTGRES_DB: ueba_db
+      POSTGRES_USER: ueba_user
+      POSTGRES_PASSWORD: ueba_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ueba_user"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ueba_network
+
+  api:
+    build: ./app
+    container_name: ppp_api
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: postgres
+      DB_NAME: ueba_db
+      DB_USER: ueba_user
+      DB_PASSWORD: ueba_pass
+      SECRET_KEY: "votre-cle-secrete-tres-longue-et-securisee-pour-jwt"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./app:/app
+      - uploads_data:/app/uploads
+      - logs_data:/app/logs
+    networks:
+      - ueba_network
+
+  adminer:
+    image: adminer:latest
+    container_name: ppp_adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - ueba_network
+
+volumes:
+  postgres_data:
+  uploads_data:
+  logs_data:
+
+networks:
+  ueba_network:
+    driver: bridge

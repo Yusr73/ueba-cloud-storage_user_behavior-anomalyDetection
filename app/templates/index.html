@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UEBA Cloud Storage Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            color: #1a2a3a;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 80px 20px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            font-size: 48px;
+            color: #1a3a5c;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #4a627a;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin: 60px 0;
+            text-align: left;
+        }
+
+        .feature {
+            padding: 24px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border-left: 4px solid #2c7da0;
+        }
+
+        .feature h3 {
+            color: #2c7da0;
+            margin-bottom: 12px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .feature p {
+            color: #5a6e7c;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #2c7da0;
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: #1f5e7a;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(44,125,160,0.25);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #2c7da0;
+            border: 2px solid #2c7da0;
+        }
+
+        .btn-secondary:hover {
+            background: #2c7da0;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            padding: 20px;
+            color: #6c86a0;
+            font-size: 14px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 32px; }
+            .subtitle { font-size: 16px; }
+            .buttons { flex-direction: column; align-items: center; }
+            .btn { width: 200px; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>UEBA Cloud Storage</h1>
+            <div class="subtitle">
+                Enterprise-grade cloud storage with advanced security analytics<br>
+                and real-time threat detection powered by UEBA technology
+            </div>
+            
+            <div class="features">
+                <div class="feature">
+                    <h3>Secure File Management</h3>
+                    <p>Upload, edit, and organize your files with enterprise-level encryption and access controls</p>
+                </div>
+                <div class="feature">
+                    <h3>Real-time Monitoring</h3>
+                    <p>Comprehensive logging of all user activities with behavioral analytics</p>
+                </div>
+                <div class="feature">
+                    <h3>Advanced Sharing</h3>
+                    <p>Secure file sharing with expiration dates and access controls</p>
+                </div>
+            </div>
+            
+            <div class="buttons">
+                <a href="/login-page" class="btn btn-primary">Sign In</a>
+                <a href="/register-page" class="btn btn-secondary">Create Account</a>
+            </div>
+        </div>
+        <div class="footer">
+            UEBA Cloud Storage Platform - Complete Security Logging Solution
+        </div>
+    </div>
+</body>
+</html>
