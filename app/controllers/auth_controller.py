@@ -17,7 +17,9 @@ class AuthController:
                 uid=uid,
                 uid_type="uid",
                 params={"username": username, "email": email},
-                role="user"
+                role="user",
+                is_local_ip=True,
+                location={"city": "unknown"}
             )
             return {"message": "User created", "uid": uid}
         
@@ -78,14 +80,26 @@ class AuthController:
 
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    print("DEBUG 1: get_current_user called")
     token = credentials.credentials
+    print(f"DEBUG 2: token = {token[:50]}...")
     payload = decode_token(token)
+    print(f"DEBUG 3: payload = {payload}")
     
     if not payload:
+        print("DEBUG 4: payload is None")
         raise HTTPException(status_code=401, detail="Invalid token")
     
+    user = UserModel.get_user_by_uid(payload.get("uid"))
+    print(f"DEBUG 5: user from DB = {user}")
+    
+    if not user:
+        print("DEBUG 6: user not found")
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    print(f"DEBUG 7: returning user with role {user['role']}")
     return {
-        "username": payload.get("sub"),
-        "role": payload.get("role"),
-        "uid": payload.get("uid")
+        "username": user['username'],
+        "role": user['role'],
+        "uid": user['uid']
     }
