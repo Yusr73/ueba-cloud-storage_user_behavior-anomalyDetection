@@ -9,7 +9,6 @@ security = HTTPBearer()
 class AuthController:
     @staticmethod
     def register(username: str, password: str, email: str = None):
-        """Register a new user."""
         uid = UserModel.create_user(username, password, email)
         
         if uid:
@@ -17,38 +16,40 @@ class AuthController:
                 event_type="user_created",
                 uid=uid,
                 uid_type="uid",
-                params={"username": username},
-                role="user"
+                params={"username": username, "email": email},
+                role="user",
+                is_local_ip=True,
+                location={"city": "unknown"}
             )
             return {"message": "User created", "uid": uid}
         
         raise HTTPException(status_code=400, detail="Username already exists")
     
     @staticmethod
-    def login(username: str, password: str, ip_address: str = None):
-        """Authenticate user and log attempt (CLUE compliant)."""
+    def login(username: str, password: str):
         user = UserModel.authenticate(username, password)
         
-        # Always log login_attempt (CLUE standard)
         write_log(
             event_type="login_attempt",
             uid=username,
             uid_type="name",
             params={"username": username, "success": user is not None},
-            ip_address=ip_address
+            role="user" if user else None,
+            is_local_ip=True,
+            location={"city": "unknown"}
         )
         
         if not user:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
-        # Log successful login separately (CLUE standard)
         write_log(
             event_type="login_successful",
             uid=user['uid'],
-            uid_type="name",
+            uid_type="uid",
             params={"username": username},
             role=user['role'],
-            ip_address=ip_address
+            is_local_ip=True,
+            location={"city": "unknown"}
         )
         
         token = create_access_token({
@@ -66,27 +67,39 @@ class AuthController:
     
     @staticmethod
     def logout(current_user):
-        """Log user logout."""
         write_log(
             event_type="logout_occured",
             uid=current_user['uid'],
-            uid_type="name",
+            uid_type="uid",
             params={"username": current_user['username']},
-            role=current_user['role']
+            role=current_user['role'],
+            is_local_ip=True,
+            location={"city": "unknown"}
         )
         return {"message": "Logged out"}
 
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Extract and validate current user from JWT token."""
+    print("DEBUG 1: get_current_user called")
     token = credentials.credentials
+    print(f"DEBUG 2: token = {token[:50]}...")
     payload = decode_token(token)
+    print(f"DEBUG 3: payload = {payload}")
     
     if not payload:
+        print("DEBUG 4: payload is None")
         raise HTTPException(status_code=401, detail="Invalid token")
     
+    user = UserModel.get_user_by_uid(payload.get("uid"))
+    print(f"DEBUG 5: user from DB = {user}")
+    
+    if not user:
+        print("DEBUG 6: user not found")
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    print(f"DEBUG 7: returning user with role {user['role']}")
     return {
-        "username": payload.get("sub"),
-        "role": payload.get("role"),
-        "uid": payload.get("uid")
+        "username": user['username'],
+        "role": user['role'],
+        "uid": user['uid']
     }
