@@ -1,25 +1,45 @@
+import os
+import hashlib
+from datetime import datetime
 from services.file_service import FileService
 from models.file_model import FileModel
 from utils.logger import write_log
-import os
 
 class FileController:
     @staticmethod
     async def upload_file(file, current_user):
         content = await file.read()
+        
+        # Vérifier si le fichier existe déjà
+        user_dir = FileService.get_user_dir(current_user['username'])
+        file_exists = os.path.exists(os.path.join(user_dir, file.filename))
+        
         filepath, size, file_hash = FileService.save_file(content, current_user['username'], file.filename)
         
-        # Track in database
         FileModel.track_file(file.filename, filepath, current_user['uid'], size, file_hash)
         
-        # Log the event
-        write_log(
-            event_type="file_created",
-            uid=current_user['uid'],
-            uid_type="name",
-            params={"filename": file.filename, "size": size, "hash": file_hash},
-            role=current_user['role']
-        )
+        if file_exists:
+            # Upload du même fichier = mise à jour des métadonnées (taille, hash, version)
+            write_log(
+                event_type="file_updated",
+                uid=current_user['uid'],
+                uid_type="uid",
+                params={"filename": file.filename, "size": size, "hash": file_hash, "action": "overwrite"},
+                role=current_user['role'],
+                is_local_ip=True,
+                location={"city": "unknown"}
+            )
+        else:
+            # Nouveau fichier
+            write_log(
+                event_type="file_created",
+                uid=current_user['uid'],
+                uid_type="uid",
+                params={"filename": file.filename, "size": size, "hash": file_hash},
+                role=current_user['role'],
+                is_local_ip=True,
+                location={"city": "unknown"}
+            )
         
         return {"filename": file.filename, "size": size}
     
@@ -30,16 +50,16 @@ class FileController:
         if content is None:
             return None, None
         
-        # Get file info
         file_info = FileService.get_file_info(current_user['username'], filename)
         
-        # Log file access
         write_log(
             event_type="file_accessed",
             uid=current_user['uid'],
-            uid_type="name",
+            uid_type="uid",
             params={"filename": filename, "action": "view", "file_type": file_type},
-            role=current_user['role']
+            role=current_user['role'],
+            is_local_ip=True,
+            location={"city": "unknown"}
         )
         
         return content, file_info
@@ -49,21 +69,15 @@ class FileController:
         success, message = FileService.update_file_content(current_user['username'], filename, content)
         
         if success:
-            # Log file edit/update
-            write_log(
-                event_type="file_updated",
-                uid=current_user['uid'],
-                uid_type="name",
-                params={"filename": filename, "action": "edit"},
-                role=current_user['role']
-            )
-            
+            # Modification du contenu du fichier
             write_log(
                 event_type="file_written",
                 uid=current_user['uid'],
-                uid_type="name",
-                params={"filename": filename, "action": "save"},
-                role=current_user['role']
+                uid_type="uid",
+                params={"filename": filename, "action": "edit"},
+                role=current_user['role'],
+                is_local_ip=True,
+                location={"city": "unknown"}
             )
         
         return success, message
@@ -72,32 +86,25 @@ class FileController:
     def delete_file(filename: str, current_user, permanent: bool = False):
         if permanent:
             success = FileService.permanent_delete(current_user['username'], filename)
-            log_type = "file_permanently_deleted"
+            log_type = "deleted_from_trashbin"
         else:
             new_path = FileService.move_to_trash(current_user['username'], filename)
             success = new_path is not None
             log_type = "file_deleted"
-        
+
         if success:
             write_log(
                 event_type=log_type,
                 uid=current_user['uid'],
-                uid_type="name",
-                params={"filename": filename, "permanent": permanent},
-                role=current_user['role']
+                uid_type="uid",
+                params={"filename": filename},
+                role=current_user['role'],
+                is_local_ip=True,
+                location={"city": "unknown"}
             )
             
-            if not permanent:
-                write_log(
-                    event_type="moved_to_trash",
-                    uid=current_user['uid'],
-                    uid_type="name",
-                    params={"filename": filename},
-                    role=current_user['role']
-                )
-            
             FileModel.mark_deleted(filename, current_user['uid'], permanent)
-        
+
         return success
     
     @staticmethod
@@ -105,12 +112,15 @@ class FileController:
         success = FileService.restore_from_trash(current_user['username'], filename)
         
         if success:
+            # Restaurer = mise à jour des métadonnées (deleted_at, in_trash)
             write_log(
-                event_type="restored_from_trash",
+                event_type="file_updated",
                 uid=current_user['uid'],
-                uid_type="name",
-                params={"filename": filename},
-                role=current_user['role']
+                uid_type="uid",
+                params={"filename": filename, "action": "restored_from_trash"},
+                role=current_user['role'],
+                is_local_ip=True,
+                location={"city": "unknown"}
             )
         
         return success
@@ -121,20 +131,49 @@ class FileController:
         old_path = os.path.join(user_dir, old_filename)
         new_path = os.path.join(user_dir, new_filename)
         
-        if os.path.exists(old_path) and not os.path.exists(new_path):
-            os.rename(old_path, new_path)
-            
-            write_log(
-                event_type="file_renamed",
-                uid=current_user['uid'],
-                uid_type="name",
-                params={"old_filename": old_filename, "new_filename": new_filename},
-                role=current_user['role']
-            )
-            return True, "File renamed"
-        elif os.path.exists(new_path):
+        if not os.path.exists(old_path):
+            return False, "File not found"
+        
+        if os.path.exists(new_path):
             return False, "File with this name already exists"
-        return False, "File not found"
+        
+        os.rename(old_path, new_path)
+        
+        write_log(
+            event_type="file_renamed",
+            uid=current_user['uid'],
+            uid_type="uid",
+            params={"old_filename": old_filename, "new_filename": new_filename},
+            role=current_user['role'],
+            is_local_ip=True,
+            location={"city": "unknown"}
+        )
+        
+        return True, "File renamed successfully"
+    
+    @staticmethod
+    def share_file(filename: str, current_user):
+        user_dir = FileService.get_user_dir(current_user['username'])
+        file_path = os.path.join(user_dir, filename)
+        
+        if not os.path.exists(file_path):
+            return False, "File not found"
+        
+        share_token = hashlib.md5(
+            f"{current_user['uid']}{filename}{datetime.now().timestamp()}".encode()
+        ).hexdigest()[:16]
+        
+        write_log(
+            event_type="shared_user",
+            uid=current_user['uid'],
+            uid_type="uid",
+            params={"filename": filename, "share_token": share_token},
+            role=current_user['role'],
+            is_local_ip=True,
+            location={"city": "unknown"}
+        )
+        
+        return True, {"share_link": f"/shared/{share_token}", "share_token": share_token}
     
     @staticmethod
     def get_file_info(filename: str, current_user):

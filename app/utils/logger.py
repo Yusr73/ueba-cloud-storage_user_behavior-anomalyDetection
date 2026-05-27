@@ -4,45 +4,49 @@ from models.database import get_db
 import os
 
 def write_log(event_type: str, uid: str, uid_type: str, params: dict,
-              is_local_ip: bool = True, role: str = None, location: dict = None,
-              ip_address: str = None, user_agent: str = None):
+              is_local_ip: bool = True, role: str = None, location: dict = None):
     
     log_entry = {
-        "time": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+        "time": datetime.now(timezone.utc),
         "uid": uid,
-        "uidType": uid_type,
+        "uid_type": uid_type,
         "type": event_type,
         "params": params,
-        "isLocalIP": is_local_ip,
+        "is_local_ip": is_local_ip,
         "role": role,
-        "location": location,
-        "ipAddress": ip_address,
-        "userAgent": user_agent
+        "location": location
     }
     
     try:
         conn = get_db()
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO logs (time, uid, uid_type, type, params, is_local_ip, role, location, ip_address, user_agent)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO logs (time, uid, uid_type, type, params, is_local_ip, role, location)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
         """, (
-            datetime.fromisoformat(log_entry['time'].replace('Z', '+00:00')),
+            log_entry['time'],
             log_entry['uid'],
-            log_entry['uidType'],
+            log_entry['uid_type'],
             log_entry['type'],
             json.dumps(log_entry['params']),
-            log_entry['isLocalIP'],
+            log_entry['is_local_ip'],
             log_entry['role'],
-            json.dumps(log_entry['location']) if log_entry['location'] else None,
-            log_entry['ipAddress'],
-            log_entry['userAgent']
+            json.dumps(log_entry['location']) if log_entry['location'] else None
         ))
+        result = cur.fetchone()
+        log_id = result['id']  # ← Correction ici
         conn.commit()
         cur.close()
         conn.close()
         
+        # Pour logs.json, convertir datetime en ISO
+        log_json = log_entry.copy()
+        log_json['time'] = log_entry['time'].isoformat().replace('+00:00', 'Z')
+        log_json['id'] = log_id
+        
+        os.makedirs("/app/logs", exist_ok=True)
         with open("/app/logs/logs.json", "a") as f:
-            f.write(json.dumps(log_entry) + "\n")
+            f.write(json.dumps(log_json) + "\n")
     except Exception as e:
         print(f"Erreur log: {e}")
