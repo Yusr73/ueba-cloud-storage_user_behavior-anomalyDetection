@@ -9,17 +9,19 @@ from datetime import datetime
 router = APIRouter(prefix="/admin", tags=["Admin"])
 templates = Jinja2Templates(directory="templates")
 
-def require_admin(current_user = Depends(get_current_user)):
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
-    return current_user
-
 @router.get("/database", response_class=HTMLResponse)
-async def database_viewer(request: Request, current_user = Depends(require_admin)):
+async def database_viewer(request: Request, current_user = Depends(get_current_user)):
+    print(f"DIRECT DEBUG: current_user = {current_user}")
+    print(f"DIRECT DEBUG: role = {current_user.get('role')}")
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
     return templates.TemplateResponse("admin_database.html", {"request": request})
 
 @router.get("/api/stats")
-async def get_stats(current_user = Depends(require_admin)):
+async def get_stats(current_user = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
     conn = get_db()
     cur = conn.cursor()
     
@@ -34,7 +36,6 @@ async def get_stats(current_user = Depends(require_admin)):
         except:
             stats[table] = 0
     
-    # Recent activity
     try:
         cur.execute("""
             SELECT type, COUNT(*) as count 
@@ -54,7 +55,10 @@ async def get_stats(current_user = Depends(require_admin)):
     return {"counts": stats, "recent_activity": recent_activity}
 
 @router.get("/api/tables")
-async def get_tables(current_user = Depends(require_admin)):
+async def get_tables(current_user = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
     conn = get_db()
     cur = conn.cursor()
     
@@ -72,11 +76,13 @@ async def get_tables(current_user = Depends(require_admin)):
     return {"tables": tables}
 
 @router.get("/api/table/{table_name}")
-async def get_table_data(table_name: str, current_user = Depends(require_admin)):
+async def get_table_data(table_name: str, current_user = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
     conn = get_db()
     cur = conn.cursor()
     
-    # Get column names
     cur.execute("""
         SELECT column_name, data_type 
         FROM information_schema.columns 
@@ -85,14 +91,12 @@ async def get_table_data(table_name: str, current_user = Depends(require_admin))
     """, (table_name,))
     columns = [{"name": row['column_name'], "type": row['data_type']} for row in cur.fetchall()]
     
-    # Get data
     try:
         cur.execute(f'SELECT * FROM "{table_name}" ORDER BY id DESC LIMIT 500')
         rows = cur.fetchall()
     except:
         rows = []
     
-    # Convert rows to list of dicts
     data = []
     for row in rows:
         row_dict = {}
@@ -111,7 +115,10 @@ async def get_table_data(table_name: str, current_user = Depends(require_admin))
     return {"columns": columns, "data": data, "count": len(data)}
 
 @router.delete("/api/table/{table_name}/{record_id}")
-async def delete_record(table_name: str, record_id: int, current_user = Depends(require_admin)):
+async def delete_record(table_name: str, record_id: int, current_user = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
     conn = get_db()
     cur = conn.cursor()
     
