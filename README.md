@@ -1,5 +1,4 @@
-
-                    UEBA CLOUD STORAGE PLATFORM
+# UEBA CLOUD STORAGE PLATFORM
 
 
 ARCHITECTURE
@@ -123,4 +122,3 @@ Chaque write_log() fait deux choses:
 Avantage: on peut faire des analyses SQL et aussi envoyer le fichier JSON a un outil externe.
 
 
-================================================================================
