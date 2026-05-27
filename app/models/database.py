@@ -24,12 +24,11 @@ def init_database():
             email VARCHAR(255),
             hashed_password VARCHAR(255),
             role VARCHAR(50),
-            created_at TIMESTAMP,
-            last_login TIMESTAMP
+            created_at TIMESTAMP
         )
     """)
     
-    # Logs table
+    # Logs table - EXACTEMENT 8 colonnes (format CLUE)
     cur.execute("""
         CREATE TABLE IF NOT EXISTS logs (
             id SERIAL PRIMARY KEY,
@@ -40,9 +39,7 @@ def init_database():
             params JSONB,
             is_local_ip BOOLEAN,
             role VARCHAR(50),
-            location JSONB,
-            ip_address VARCHAR(50),
-            user_agent TEXT
+            location JSONB
         )
     """)
     

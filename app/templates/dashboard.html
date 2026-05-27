@@ -393,6 +393,22 @@
             }
         }
 
+        async function downloadFile(filename) {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/files/download/${encodeURIComponent(filename)}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
         function showRenameInput(filename) {
             const actionsDiv = document.getElementById(`actions-${filename}`);
             
@@ -498,41 +514,55 @@
             loadFiles();
         }
 
-        async function viewFile(filename) {
-            try {
-                const response = await fetch(`/files/view/${filename}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-                
-                const win = window.open();
-                win.document.write(`
-                    <html>
-                    <head><title>${escapeHtml(filename)}</title>
-                    <style>
-                        body { font-family: monospace; padding: 20px; background: #f8fafc; }
-                        pre { white-space: pre-wrap; word-wrap: break-word; }
-                    </style>
-                    </head>
-                    <body><pre>${escapeHtml(data.content)}</pre></body>
-                    </html>
-                `);
-            } catch (error) {
-                console.error('Error viewing file:', error);
-                alert('Error viewing file');
+        function viewFile(filename) {
+            const extension = filename.split('.').pop().toLowerCase();
+            
+            if (extension === 'pdf') {
+                downloadFile(filename);
+            } else {
+                window.location.href = `/editor/${filename}`;
             }
         }
 
         function editFile(filename) {
-            window.location.href = `/editor/${filename}`;
+            const extension = filename.split('.').pop().toLowerCase();
+            
+            if (extension === 'pdf') {
+                downloadFile(filename);
+                
+                setTimeout(() => {
+                    if (confirm('After editing the PDF, upload the new version?')) {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = '.pdf';
+                        input.onchange = async (e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                                const formData = new FormData();
+                                formData.append('file', file);
+                                
+                                await fetch(`/files/${filename}?permanent=true`, {
+                                    method: 'DELETE',
+                                    headers: { 'Authorization': `Bearer ${token}` }
+                                });
+                                
+                                await fetch('/files/upload', {
+                                    method: 'POST',
+                                    headers: { 'Authorization': `Bearer ${token}` },
+                                    body: formData
+                                });
+                                
+                                alert('PDF updated!');
+                                location.reload();
+                            }
+                        };
+                        input.click();
+                    }
+                }, 2000);
+            } else {
+                window.location.href = `/editor/${filename}`;
+            }
         }
-
-        function downloadFile(filename) {
-    const token = localStorage.getItem('token');
-    window.open(`/files/download/${encodeURIComponent(filename)}?token=${token}`, '_blank');
-}
-
-        
 
         async function shareFile(filename) {
             try {
@@ -615,24 +645,18 @@
         }
 
         async function logout() {
-    const token = localStorage.getItem('token');
-    
-    if (token) {
-        await fetch('/logout', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-    }
-    
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('uid');
-    localStorage.removeItem('role');
-    
-    window.location.href = '/login-page';
-}
-
-        
+            await fetch('/logout', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('uid');
+            localStorage.removeItem('role');
+            
+            window.location.href = '/login-page';
+        }
 
         loadFiles();
     </script>

@@ -7,13 +7,27 @@ class FileModel:
         conn = get_db()
         cur = conn.cursor()
         
+        # D'abord, vérifier si le fichier existe déjà
         cur.execute("""
-            INSERT INTO files (filename, filepath, uid, size, file_hash, created_at, updated_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (filename, uid) DO UPDATE
-            SET updated_at = %s, size = %s, file_hash = %s, version = files.version + 1
-        """, (filename, filepath, uid, size, file_hash, datetime.now(timezone.utc), 
-              datetime.now(timezone.utc), datetime.now(timezone.utc), size, file_hash))
+            SELECT id FROM files WHERE filename = %s AND uid = %s
+        """, (filename, uid))
+        
+        existing = cur.fetchone()
+        
+        if existing:
+            # Mettre à jour
+            cur.execute("""
+                UPDATE files 
+                SET filepath = %s, size = %s, file_hash = %s, 
+                    updated_at = %s, version = version + 1
+                WHERE filename = %s AND uid = %s
+            """, (filepath, size, file_hash, datetime.now(timezone.utc), filename, uid))
+        else:
+            # Insérer nouveau
+            cur.execute("""
+                INSERT INTO files (filename, filepath, uid, size, file_hash, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (filename, filepath, uid, size, file_hash, datetime.now(timezone.utc), datetime.now(timezone.utc)))
         
         conn.commit()
         cur.close()
