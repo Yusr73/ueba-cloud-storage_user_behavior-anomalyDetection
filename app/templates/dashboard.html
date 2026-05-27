@@ -614,13 +614,25 @@
             return div.innerHTML;
         }
 
-        function logout() {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            localStorage.removeItem('uid');
-            localStorage.removeItem('role');
-            window.location.href = '/login-page';
-        }
+        async function logout() {
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+        await fetch('/logout', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+    }
+    
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('uid');
+    localStorage.removeItem('role');
+    
+    window.location.href = '/login-page';
+}
+
+        
 
         loadFiles();
     </script>
