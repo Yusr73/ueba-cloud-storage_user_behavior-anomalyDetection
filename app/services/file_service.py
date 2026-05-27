@@ -6,6 +6,19 @@ from pathlib import Path
 from config import Config
 
 class FileService:
+    # Liste des extensions éditables (texte)
+    EDITABLE_EXTENSIONS = {
+    '.txt', '.py', '.js', '.html', '.css', '.json', '.xml', '.md', 
+    '.csv', '.log', '.sh', '.bat', '.yml', '.yaml', '.conf', '.cfg',
+    '.ini', '.properties', '.docx', ''  # ← Ajouter '' pour fichiers sans extension
+}
+    
+    # Liste des extensions image
+    IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp', '.ico'}
+    
+    # Liste des extensions PDF
+    PDF_EXTENSIONS = {'.pdf'}
+    
     @staticmethod
     def get_user_dir(username: str):
         user_dir = os.path.join(Config.UPLOAD_BASE_DIR, username)
@@ -37,54 +50,34 @@ class FileService:
         if not os.path.exists(filepath):
             return None, None
         
-        # Get file extension
         ext = os.path.splitext(filename)[1].lower()
         
-        # Text-based files that can be displayed/edited
-        text_extensions = {
-            '.txt', '.py', '.js', '.html', '.css', '.json', '.xml', '.md', 
-            '.csv', '.log', '.sh', '.bat', '.yml', '.yaml', '.conf', '.cfg',
-            '.ini', '.properties', '.java', '.c', '.cpp', '.h', '.go', '.rs',
-            '.php', '.rb', '.pl', '.lua', '.sql', '.vue', '.jsx', '.tsx', '.ts'
-        }
-        
-        # Image files
-        image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp', '.ico'}
-        
-        # PDF files
-        pdf_extensions = {'.pdf'}
-        
-        if ext in text_extensions:
-            # Read as text
+        if ext in FileService.EDITABLE_EXTENSIONS:
             try:
                 with open(filepath, 'r', encoding='utf-8') as f:
                     content = f.read()
                 return content, 'text'
             except UnicodeDecodeError:
-                # Try different encoding
                 try:
                     with open(filepath, 'r', encoding='latin-1') as f:
                         content = f.read()
                     return content, 'text'
                 except:
                     return None, None
-        elif ext in image_extensions:
-            # Return base64 for images
+        elif ext in FileService.IMAGE_EXTENSIONS:
             import base64
             with open(filepath, 'rb') as f:
                 image_data = base64.b64encode(f.read()).decode('utf-8')
                 mime_type = mimetypes.guess_type(filename)[0] or 'image/png'
                 return f"data:{mime_type};base64,{image_data}", 'image'
-        elif ext in pdf_extensions:
-            # Return PDF as binary
+        elif ext in FileService.PDF_EXTENSIONS:
+            import base64
             with open(filepath, 'rb') as f:
-                import base64
                 pdf_data = base64.b64encode(f.read()).decode('utf-8')
                 return pdf_data, 'pdf'
         else:
-            # Binary file
+            import base64
             with open(filepath, 'rb') as f:
-                import base64
                 binary_data = base64.b64encode(f.read()).decode('utf-8')
                 return binary_data, 'binary'
     
@@ -93,16 +86,10 @@ class FileService:
         user_dir = FileService.get_user_dir(username)
         filepath = os.path.join(user_dir, filename)
         
-        # Only allow editing text files
         ext = os.path.splitext(filename)[1].lower()
-        text_extensions = {
-            '.txt', '.py', '.js', '.html', '.css', '.json', '.xml', '.md', 
-            '.csv', '.log', '.sh', '.bat', '.yml', '.yaml', '.conf', '.cfg',
-            '.ini', '.properties'
-        }
         
-        if ext not in text_extensions:
-            return False, "Cannot edit binary files"
+        if ext not in FileService.EDITABLE_EXTENSIONS:
+            return False, f"Cannot edit {ext} files. Only text files are editable."
         
         try:
             with open(filepath, 'w', encoding='utf-8') as f:
@@ -120,7 +107,6 @@ class FileService:
         dst = os.path.join(trash_dir, filename)
         
         if os.path.exists(src):
-            # Handle duplicate filenames in trash
             if os.path.exists(dst):
                 base, ext = os.path.splitext(filename)
                 counter = 1
@@ -197,14 +183,13 @@ class FileService:
             return None
         
         ext = os.path.splitext(filename)[1].lower()
-        text_extensions = {'.txt', '.py', '.js', '.html', '.css', '.json', '.xml', '.md', '.csv', '.log'}
         
         return {
             "name": filename,
             "size": os.path.getsize(filepath),
             "modified": os.path.getmtime(filepath),
             "extension": ext,
-            "is_editable": ext in text_extensions,
-            "is_image": ext in {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp'},
+            "is_editable": ext in FileService.EDITABLE_EXTENSIONS,
+            "is_image": ext in FileService.IMAGE_EXTENSIONS,
             "is_pdf": ext == '.pdf'
         }
