@@ -115,9 +115,9 @@ Entrer PostgreSQL: docker exec -it ppp_postgres psql -U ueba_user -d ueba_db
 - Documentation API: http://localhost:8000/docs
 - Adminer (DB): http://localhost:8080 (postgres / ueba_user / ueba_pass / ueba_db)
 
-## Structure du projet
+    ## Structure du projet
 
-ppp/
+````ppp/
 ├── app/
 │   ├── controllers/      # AuthController, FileController
 │   ├── services/         # FileService, DetectionService
@@ -134,4 +134,4 @@ ppp/
 ├── logs/                 # logs.json (volume local)
 ├── uploads/              # Fichiers utilisateurs (volume local)
 ├── docker-compose.yml
-└── README.md
+└── README.md````
