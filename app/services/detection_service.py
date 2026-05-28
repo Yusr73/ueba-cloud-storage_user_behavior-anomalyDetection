@@ -3,6 +3,7 @@ import numpy as np
 from models.database import get_db
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
+from datetime import datetime, timedelta
 
 class DetectionService:
     
@@ -224,4 +225,182 @@ class DetectionService:
             "total_days": len(daily_df),
             "flagged_days": len(baseline_df[baseline_df['anomaly_score'] > 0]),
             "results": baseline_df.to_dict(orient="records")
+        }
+    
+    @staticmethod
+    def detect_rare_events(uid):
+        """Phase 2: Détection d'événements rares avec fenêtres glissantes"""
+        
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT time, type
+            FROM logs
+            WHERE uid = %s
+            ORDER BY time
+        """, (uid,))
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        
+        if not rows:
+            return {"error": f"No data for user {uid}"}
+        
+        # Déterminer le multiplicateur selon l'utilisateur
+        if uid == "alice":
+            multiplier = 2
+            profile = "stable"
+        else:
+            multiplier = 3
+            profile = "instable"
+        
+        # Listes pour stocker les maxima historiques
+        writes_1min = []
+        deletes_5min = []
+        creates_5min = []
+        access_after_login = []
+        
+        # Listes pour les anomalies
+        ransomware_alerts = []
+        deletion_alerts = []
+        creation_alerts = []
+        account_alerts = []
+        
+        # Variables pour les fenêtres
+        current_window_1min = None
+        current_writes = 0
+        window_start_1min = None
+        
+        current_window_5min = None
+        current_deletes = 0
+        current_creates = 0
+        window_start_5min = None
+        
+        last_login_time = None
+        access_count = 0
+        
+        for row in rows:
+            time = row['time']
+            event_type = row['type']
+            
+            # Fenêtre 1 minute pour file_written
+            window_1min = time.strftime("%Y-%m-%d %H:%M")
+            if window_1min != current_window_1min:
+                if current_window_1min is not None:
+                    writes_1min.append(current_writes)
+                    # Vérifier seuil ransomware
+                    historical_max = max(writes_1min[:-1]) if len(writes_1min) > 1 else 0
+                    if current_writes > historical_max * multiplier and historical_max > 0:
+                        ransomware_alerts.append({
+                            "time": current_window_1min,
+                            "count": current_writes,
+                            "threshold": historical_max * multiplier,
+                            "multiplier": multiplier
+                        })
+                current_window_1min = window_1min
+                current_writes = 0
+            
+            if event_type == "file_written":
+                current_writes += 1
+            
+            # Fenêtre 5 minutes pour file_deleted et file_created
+            min_5 = (time.minute // 5) * 5
+            window_5min = time.strftime(f"%Y-%m-%d %H:{min_5:02d}")
+            if window_5min != current_window_5min:
+                if current_window_5min is not None:
+                    deletes_5min.append(current_deletes)
+                    creates_5min.append(current_creates)
+                    # Vérifier seuil suppression massive
+                    historical_max_del = max(deletes_5min[:-1]) if len(deletes_5min) > 1 else 0
+                    if current_deletes > historical_max_del * multiplier and historical_max_del > 0:
+                        deletion_alerts.append({
+                            "time": current_window_5min,
+                            "count": current_deletes,
+                            "threshold": historical_max_del * multiplier,
+                            "multiplier": multiplier
+                        })
+                    # Vérifier seuil dépôt malveillant
+                    historical_max_cre = max(creates_5min[:-1]) if len(creates_5min) > 1 else 0
+                    if current_creates > historical_max_cre * multiplier and historical_max_cre > 0:
+                        creation_alerts.append({
+                            "time": current_window_5min,
+                            "count": current_creates,
+                            "threshold": historical_max_cre * multiplier,
+                            "multiplier": multiplier
+                        })
+                current_window_5min = window_5min
+                current_deletes = 0
+                current_creates = 0
+            
+            if event_type == "file_deleted":
+                current_deletes += 1
+            elif event_type == "file_created":
+                current_creates += 1
+            
+            # Accès après login
+            if event_type == "login_successful":
+                last_login_time = time
+                access_count = 0
+            elif event_type == "file_accessed" and last_login_time:
+                if (time - last_login_time).total_seconds() <= 60:
+                    access_count += 1
+                    access_after_login.append(access_count)
+                    # Vérifier seuil compte volé
+                    historical_max_acc = max(access_after_login[:-1]) if len(access_after_login) > 1 else 0
+                    if access_count > historical_max_acc * multiplier and historical_max_acc > 0:
+                        account_alerts.append({
+                            "login_time": last_login_time.strftime("%Y-%m-%d %H:%M:%S"),
+                            "count": access_count,
+                            "threshold": historical_max_acc * multiplier,
+                            "multiplier": multiplier
+                        })
+        
+        # Traiter la dernière fenêtre
+        if current_window_1min is not None:
+            writes_1min.append(current_writes)
+            historical_max = max(writes_1min[:-1]) if len(writes_1min) > 1 else 0
+            if current_writes > historical_max * multiplier and historical_max > 0:
+                ransomware_alerts.append({
+                    "time": current_window_1min,
+                    "count": current_writes,
+                    "threshold": historical_max * multiplier,
+                    "multiplier": multiplier
+                })
+        
+        if current_window_5min is not None:
+            deletes_5min.append(current_deletes)
+            creates_5min.append(current_creates)
+            historical_max_del = max(deletes_5min[:-1]) if len(deletes_5min) > 1 else 0
+            if current_deletes > historical_max_del * multiplier and historical_max_del > 0:
+                deletion_alerts.append({
+                    "time": current_window_5min,
+                    "count": current_deletes,
+                    "threshold": historical_max_del * multiplier,
+                    "multiplier": multiplier
+                })
+            historical_max_cre = max(creates_5min[:-1]) if len(creates_5min) > 1 else 0
+            if current_creates > historical_max_cre * multiplier and historical_max_cre > 0:
+                creation_alerts.append({
+                    "time": current_window_5min,
+                    "count": current_creates,
+                    "threshold": historical_max_cre * multiplier,
+                    "multiplier": multiplier
+                })
+        
+        return {
+            "user_id": uid,
+            "profile": profile,
+            "multiplier": multiplier,
+            "anomalies": {
+                "ransomware": ransomware_alerts,
+                "mass_deletion": deletion_alerts,
+                "malicious_upload": creation_alerts,
+                "account_takeover": account_alerts
+            },
+            "thresholds": {
+                "ransomware": max(writes_1min) if writes_1min else 0,
+                "mass_deletion": max(deletes_5min) if deletes_5min else 0,
+                "malicious_upload": max(creates_5min) if creates_5min else 0,
+                "account_takeover": max(access_after_login) if access_after_login else 0
+            }
         }

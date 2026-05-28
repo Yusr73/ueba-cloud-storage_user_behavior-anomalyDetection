@@ -23,3 +23,7 @@ async def get_both_analysis(current_user = Depends(require_admin)):
         "alice": DetectionService.get_full_analysis("alice"),
         "bob": DetectionService.get_full_analysis("bob")
     }
+
+@router.get("/rare/{uid}")
+async def get_rare_events(uid: str, current_user = Depends(require_admin)):
+    return DetectionService.detect_rare_events(uid)
