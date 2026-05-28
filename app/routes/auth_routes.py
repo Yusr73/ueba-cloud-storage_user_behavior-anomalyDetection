@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel
 from controllers.auth_controller import AuthController, get_current_user
 
@@ -18,12 +18,12 @@ def register(request: RegisterRequest):
     return AuthController.register(request.username, request.password, request.email)
 
 @router.post("/login")
-def login(request: LoginRequest):
-    return AuthController.login(request.username, request.password)
+def login(request: LoginRequest, response: Response):
+    return AuthController.login(request.username, request.password, response)
 
 @router.post("/logout")
-def logout(current_user = Depends(get_current_user)):
-    return AuthController.logout(current_user)
+def logout(response: Response, current_user = Depends(get_current_user)):
+    return AuthController.logout(response, current_user)
 
 @router.get("/me")
 def get_me(current_user = Depends(get_current_user)):

@@ -3,463 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Database Admin - UEBA Cloud</title>
+    <title>Admin Panel</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f0f4f8;
-            color: #1a2a3a;
-        }
-
-        .header {
-            background: #2c7da0;
-            color: white;
-            padding: 16px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header h1 {
-            font-size: 20px;
-            font-weight: 600;
-        }
-
-        .header a {
-            color: white;
-            text-decoration: none;
-            padding: 6px 12px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 6px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 24px auto;
-            padding: 0 24px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-
-        .stat-card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-            border: 1px solid #e2e8f0;
-        }
-
-        .stat-card h3 {
-            font-size: 14px;
-            color: #6c86a0;
-            margin-bottom: 8px;
-        }
-
-        .stat-card .number {
-            font-size: 32px;
-            font-weight: 700;
-            color: #2c7da0;
-        }
-
-        .main-layout {
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 24px;
-        }
-
-        .sidebar {
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            overflow: hidden;
-        }
-
-        .sidebar-header {
-            background: #f8fafc;
-            padding: 16px;
-            font-weight: 600;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .table-list {
-            list-style: none;
-        }
-
-        .table-list li {
-            padding: 12px 16px;
-            border-bottom: 1px solid #e2e8f0;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .table-list li:hover {
-            background: #f0f4f8;
-        }
-
-        .table-list li.active {
-            background: #e8f4f8;
-            color: #2c7da0;
-            font-weight: 500;
-            border-left: 3px solid #2c7da0;
-        }
-
-        .content {
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            overflow: hidden;
-        }
-
-        .content-header {
-            background: #f8fafc;
-            padding: 16px 20px;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .content-header h2 {
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .refresh-btn {
-            padding: 6px 12px;
-            background: #2c7da0;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-            max-height: 600px;
-            overflow-y: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-
-        th {
-            background: #f8fafc;
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #e2e8f0;
-            vertical-align: top;
-        }
-
-        tr:hover {
-            background: #f8fafc;
-        }
-
-        .delete-btn {
-            padding: 4px 8px;
-            background: #fee;
-            color: #c0392b;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 11px;
-        }
-
-        .delete-btn:hover {
-            background: #fdd;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #6c86a0;
-        }
-
-        .activity-list {
-            margin-top: 24px;
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            padding: 16px;
-        }
-
-        .activity-list h3 {
-            margin-bottom: 12px;
-            font-size: 16px;
-        }
-
-        .activity-item {
-            padding: 8px 0;
-            border-bottom: 1px solid #e2e8f0;
-            font-size: 13px;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 2px 8px;
-            background: #e8f4f8;
-            color: #2c7da0;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 500;
-        }
-
-        @media (max-width: 768px) {
-            .main-layout {
-                grid-template-columns: 1fr;
-            }
-        }
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f0f4f8; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
+        .error { color: red; text-align: center; padding: 50px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #2c7da0; color: white; }
+        .btn-danger { background: #c0392b; color: white; border: none; padding: 4px 8px; cursor: pointer; border-radius: 4px; }
+        select, button { padding: 8px; margin: 5px; }
+        .admin-only { display: none; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Database Administration Panel</h1>
-        <a href="/dashboard">Back to Dashboard</a>
-    </div>
-
     <div class="container">
-        <div class="stats-grid" id="stats-grid">
-            <div class="stat-card">
-                <h3>Loading...</h3>
-                <div class="number">-</div>
-            </div>
-        </div>
-
-        <div class="main-layout">
-            <div class="sidebar">
-                <div class="sidebar-header">Tables</div>
-                <ul class="table-list" id="table-list">
-                    <li style="padding: 20px; text-align: center; color: #6c86a0;">Loading...</li>
-                </ul>
-            </div>
-
-            <div class="content">
-                <div class="content-header">
-                    <h2 id="current-table">Select a table</h2>
-                    <button class="refresh-btn" onclick="loadCurrentTable()">Refresh</button>
-                </div>
-                <div class="table-wrapper" id="table-content">
-                    <div class="loading">Select a table from the left</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="activity-list" id="activity-list">
-            <h3>Recent Activity (Last 24 Hours)</h3>
-            <div class="loading">Loading...</div>
+        <h1>Administration Panel</h1>
+        <div id="message"></div>
+        <div id="admin-content" class="admin-only">
+            <h2>Tables</h2>
+            <select id="table-select">
+                <option value="users">Users</option>
+                <option value="logs">Logs</option>
+                <option value="files">Files</option>
+                <option value="shares">Shares</option>
+            </select>
+            <button onclick="loadTableData()">Load</button>
+            <div id="table-data"></div>
         </div>
     </div>
 
     <script>
         const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+        
         if (!token) {
             window.location.href = '/login-page';
         }
-
-        let currentTable = null;
-
+        
+        if (role !== 'admin') {
+            document.getElementById('message').innerHTML = '<div class="error"><h2>Accès refusé</h2><p>Vous devez être administrateur pour accéder à cette page.</p><a href="/dashboard">Retour au dashboard</a></div>';
+        } else {
+            document.getElementById('admin-content').style.display = 'block';
+            loadStats();
+        }
+        
+        async function apiCall(url) {
+            const response = await fetch(url, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!response.ok) throw new Error('Erreur ' + response.status);
+            return response.json();
+        }
+        
         async function loadStats() {
             try {
-                const response = await fetch('/admin/api/stats', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-                
-                const statsGrid = document.getElementById('stats-grid');
-                statsGrid.innerHTML = Object.entries(data.counts).map(([table, count]) => `
-                    <div class="stat-card">
-                        <h3>${table.toUpperCase()}</h3>
-                        <div class="number">${count}</div>
-                    </div>
-                `).join('');
-                
-                // Load activity
-                const activityList = document.getElementById('activity-list');
-                if (data.recent_activity && data.recent_activity.length > 0) {
-                    activityList.innerHTML = `
-                        <h3>Recent Activity (Last 24 Hours)</h3>
-                        ${data.recent_activity.map(activity => `
-                            <div class="activity-item">
-                                <span class="badge">${activity.count}</span>
-                                <span style="margin-left: 8px;">${activity.type}</span>
-                            </div>
-                        `).join('')}
-                    `;
-                } else {
-                    activityList.innerHTML = '<h3>Recent Activity (Last 24 Hours)</h3><div class="loading">No activity in last 24 hours</div>';
+                const data = await apiCall('/admin/api/stats');
+                let html = '<h2>Statistiques</h2><table><tr><th>Table</th><th>Nombre</th></tr>';
+                for (const [table, count] of Object.entries(data.counts)) {
+                    html += `<tr><td>${table}</td><td>${count}</td></tr>`;
                 }
-            } catch (error) {
-                console.error('Error loading stats:', error);
+                html += '</table>';
+                document.getElementById('message').innerHTML = html;
+            } catch(e) {
+                document.getElementById('message').innerHTML = '<p class="error">Erreur chargement stats</p>';
             }
         }
-
-        async function loadTables() {
+        
+        async function loadTableData() {
+            const table = document.getElementById('table-select').value;
             try {
-                const response = await fetch('/admin/api/tables', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-                
-                const tableList = document.getElementById('table-list');
-                tableList.innerHTML = data.tables.map(table => `
-                    <li onclick="selectTable('${table}')">${table}</li>
-                `).join('');
-            } catch (error) {
-                console.error('Error loading tables:', error);
-            }
-        }
-
-        async function selectTable(tableName) {
-            currentTable = tableName;
-            
-            // Update active state
-            document.querySelectorAll('.table-list li').forEach(li => {
-                li.classList.remove('active');
-                if (li.textContent === tableName) {
-                    li.classList.add('active');
-                }
-            });
-            
-            document.getElementById('current-table').innerText = tableName;
-            await loadTableData(tableName);
-        }
-
-        async function loadTableData(tableName) {
-            const container = document.getElementById('table-content');
-            container.innerHTML = '<div class="loading">Loading...</div>';
-            
-            try {
-                const response = await fetch(`/admin/api/table/${tableName}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-                
-                if (data.data.length === 0) {
-                    container.innerHTML = '<div class="loading">No data in this table</div>';
+                const data = await apiCall(`/admin/api/table/${table}`);
+                if (!data.data.length) {
+                    document.getElementById('table-data').innerHTML = '<p>Aucune donnée</p>';
                     return;
                 }
-                
-                // Check if table has id column for delete
-                const hasIdColumn = data.columns.some(col => col.name === 'id');
-                
-                container.innerHTML = `
-                    <table>
-                        <thead>
-                            <tr>
-                                ${data.columns.map(col => `<th>${col.name}</th>`).join('')}
-                                ${hasIdColumn ? '<th>Actions</th>' : ''}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${data.data.map(row => `
-                                <tr>
-                                    ${data.columns.map(col => `
-                                        <td title="${col.type}">${truncate(row[col.name], 100)}</td>
-                                    `).join('')}
-                                    ${hasIdColumn ? `
-                                        <td>
-                                            <button class="delete-btn" onclick="deleteRecord('${tableName}', ${row.id})">Delete</button>
-                                        </td>
-                                    ` : ''}
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                    <div style="padding: 12px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 12px; color: #6c86a0;">
-                        Showing ${data.data.length} records
-                    </div>
-                `;
-            } catch (error) {
-                console.error('Error loading table data:', error);
-                container.innerHTML = '<div class="loading">Error loading table data</div>';
+                let html = '<table><tr>';
+                for (const col of data.columns) html += `<th>${col.name}</th>`;
+                html += '<th>Action</th></tr>';
+                for (const row of data.data) {
+                    html += '<tr>';
+                    for (const col of data.columns) {
+                        let val = row[col.name];
+                        if (val && val.length > 50) val = val.substring(0, 50) + '...';
+                        html += `<td>${val || '-'}</td>`;
+                    }
+                    html += `<td><button class="btn-danger" onclick="deleteRecord('${table}', ${row.id})">Supprimer</button></td>`;
+                    html += '</tr>';
+                }
+                html += '</table>';
+                document.getElementById('table-data').innerHTML = html;
+            } catch(e) {
+                document.getElementById('table-data').innerHTML = '<p class="error">Erreur chargement</p>';
             }
         }
-
-        async function loadCurrentTable() {
-            if (currentTable) {
-                await loadTableData(currentTable);
-            }
-        }
-
-        async function deleteRecord(tableName, recordId) {
-            if (!confirm(`Delete record ${recordId} from ${tableName}? This action cannot be undone.`)) {
-                return;
-            }
-            
+        
+        async function deleteRecord(table, id) {
+            if (!confirm(`Supprimer l'enregistrement ${id} ?`)) return;
             try {
-                const response = await fetch(`/admin/api/table/${tableName}/${recordId}`, {
+                const response = await fetch(`/admin/api/table/${table}/${id}`, {
                     method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 'Authorization': 'Bearer ' + token }
                 });
                 const result = await response.json();
-                
                 if (result.success) {
-                    alert('Record deleted successfully');
+                    alert('Supprimé');
+                    loadTableData();
                     loadStats();
-                    loadTableData(tableName);
                 } else {
-                    alert('Error deleting record: ' + result.error);
+                    alert('Erreur: ' + result.error);
                 }
-            } catch (error) {
-                console.error('Error deleting record:', error);
-                alert('Error deleting record');
+            } catch(e) {
+                alert('Erreur');
             }
         }
-
-        function truncate(str, maxLength) {
-            if (!str) return '-';
-            const string = String(str);
-            if (string.length <= maxLength) return string;
-            return string.substring(0, maxLength) + '...';
-        }
-
-        // Auto-refresh every 10 seconds
-        let refreshInterval;
-        
-        function startAutoRefresh() {
-            refreshInterval = setInterval(() => {
-                loadStats();
-                if (currentTable) {
-                    loadTableData(currentTable);
-                }
-            }, 10000);
-        }
-        
-        function stopAutoRefresh() {
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
-            }
-        }
-
-        // Initialize
-        loadStats();
-        loadTables();
-        startAutoRefresh();
-        
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', stopAutoRefresh);
     </script>
 </body>
 </html>
