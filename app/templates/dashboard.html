@@ -407,9 +407,21 @@
             }
         }
 
-        function downloadFile(filename) {
-            window.location.href = `/files/download/${encodeURIComponent(filename)}`;
-        }
+        async function downloadFile(filename) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`/files/download/${encodeURIComponent(filename)}`, {
+        headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
 
         function showRenameInput(filename) {
             const actionsDiv = document.getElementById(`actions-${filename}`);
@@ -638,7 +650,7 @@
         }
 
         async function logout() {
-            await apiCall('/logout', { method: 'POST' });
+            await apiCall('/logout', { method: 'POST' })
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             localStorage.removeItem('uid');
