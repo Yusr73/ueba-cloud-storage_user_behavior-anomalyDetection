@@ -1,7 +1,6 @@
 # UEBA CLOUD STORAGE PLATFORM
 
-
-ARCHITECTURE
+## ARCHITECTURE
 
 L'application suit une architecture MVC2 (Model-View-Controller) adaptee aux APIs:
 
@@ -11,22 +10,45 @@ Route (endpoint) → Controller (logique + logs) → Service (fichiers) → Mode
 - controllers/: Orchestrent les actions et appellent write_log()
 - services/: Gerent les fichiers (upload, download, edition)
 - models/: Accedent a PostgreSQL
-- utils/: Contiennent logger.py (CLUE) et security.py (JWT)
+- utils/: Contiennent logger.py (CLUE) et security.py (JWT, bcrypt)
 
 Pourquoi?
 - Separation claire: chaque couche a un role unique
 - Reutilisable: les services n'ont pas besoin des routes
 - Testable: on peut tester chaque composant isolement
 
-TECHNOLOGIES
+## TECHNOLOGIES
 
 - FastAPI (Python 3.11): Framework asynchrone, auto-documentation /docs
 - PostgreSQL 15: Stockage des utilisateurs, logs, metadonnees fichiers
 - Docker Compose: Orchestration (API + PostgreSQL + Adminer)
 - JWT: Authentification stateless (valide 60 minutes)
-- SHA256: Hachage des mots de passe (pas de sel pour POC)
+- bcrypt: Hachage des mots de passe avec sel (standard industriel)
+- Cookies httpOnly: Stockage securise du token JWT
 
-FONCTIONNALITES
+## SECURITE
+
+### Mots de passe
+- Hachage avec bcrypt (sel automatique, cout ajustable)
+- Remplace SHA256 (trop rapide, sans sel)
+
+### Tokens JWT
+- Stockes dans cookies httpOnly (inaccessibles au JavaScript)
+- Fallback vers header Authorization pour les requetes fetch
+- Valides 60 minutes
+
+### Headers de securite
+- X-Frame-Options: DENY (anti-clickjacking)
+- X-Content-Type-Options: nosniff (anti-MIME sniffing)
+- X-XSS-Protection: 1; mode=block
+- Referrer-Policy: strict-origin-when-cross-origin
+
+### Limitations (pour POC)
+- Pas de HTTPS (localhost)
+- Pas de rate limiting
+- Utilisation de localStorage en complement (pour compatibilite frontend)
+
+## FONCTIONNALITES
 
 Utilisateurs:
 - Inscription / Connexion / Deconnexion
@@ -45,8 +67,9 @@ Admin:
 - Interface web pour voir toutes les tables
 - Statistiques (nombre d'enregistrements par table)
 - Suppression d'enregistrements
+- Verification du role cote JavaScript + API backend
 
-LOGGING CLUE
+## LOGGING CLUE
 
 Format CLUE (Cloud Log UEBA) = standard pour detection d'anomalies.
 
@@ -62,63 +85,71 @@ Format CLUE (Cloud Log UEBA) = standard pour detection d'anomalies.
 8. role        : Role de l'utilisateur ("user" ou "admin")
 9. location    : Geolocalisation (JSON, pour UEBA)
 
-12 types d'evenements CLUE et leur declenchement:
+### 12 types d'evenements CLUE
 
-file_accessed
-→ declenche quand: utilisateur voit OU telecharge un fichier
-→ params contient: {"filename": "xxx", "action": "view" ou "download"}
+| evenement | declenchement |
+|-----------|---------------|
+| file_accessed | utilisateur voit OU telecharge un fichier |
+| file_written | utilisateur edite et sauvegarde un fichier texte |
+| file_created | utilisateur uploade un nouveau fichier |
+| file_updated | upload remplace existant OU restauration depuis corbeille |
+| file_deleted | utilisateur supprime un fichier (corbeille) |
+| deleted_from_trashbin | suppression definitive depuis corbeille |
+| file_renamed | utilisateur renomme un fichier |
+| shared_user | utilisateur genere un lien de partage |
+| login_attempt | tentative de connexion (reussie ou echouee) |
+| login_successful | connexion reussie |
+| logout_occured | deconnexion |
+| user_created | creation de compte |
 
-file_written
-→ declenche quand: utilisateur edite et sauvegarde un fichier texte
-→ params contient: {"filename": "xxx", "action": "edit"}
-
-file_created
-→ declenche quand: utilisateur uploade un nouveau fichier (qui n'existait pas)
-→ params contient: {"filename": "xxx", "size": 1234, "hash": "md5..."}
-
-file_updated
-→ declenche quand: utilisateur uploade un fichier qui remplace un existant
-→ declenche aussi quand: utilisateur restaure un fichier depuis la corbeille
-→ params contient: {"filename": "xxx", "action": "overwrite" ou "restored"}
-
-file_deleted
-→ declenche quand: utilisateur supprime un fichier (mettre a la corbeille)
-→ params contient: {"filename": "xxx"}
-
-deleted_from_trashbin
-→ declenche quand: utilisateur supprime definitivement un fichier (vider corbeille)
-→ params contient: {"filename": "xxx"}
-
-file_renamed
-→ declenche quand: utilisateur renomme un fichier
-→ params contient: {"old_filename": "xxx", "new_filename": "yyy"}
-
-shared_user
-→ declenche quand: utilisateur genere un lien de partage pour un fichier
-→ params contient: {"filename": "xxx", "share_token": "token16"}
-
-login_attempt
-→ declenche quand: utilisateur tente de se connecter (reussi ou echoue)
-→ params contient: {"username": "xxx", "success": true/false}
-
-login_successful
-→ declenche quand: utilisateur se connecte avec succes
-→ params contient: {"username": "xxx"}
-
-logout_occured
-→ declenche quand: utilisateur se deconnecte
-→ params contient: {"username": "xxx"}
-
-user_created
-→ declenche quand: utilisateur cree un compte
-→ params contient: {"username": "xxx", "email": "xxx"}
-
-DOUBLE STOCKAGE DES LOGS
+## DOUBLE STOCKAGE DES LOGS
 
 Chaque write_log() fait deux choses:
 1. INSERT dans PostgreSQL (pour requeter facilement)
 2. Append dans /app/logs/logs.json (pour backup et export SIEM)
 
-Avantage: on peut faire des analyses SQL et aussi envoyer le fichier JSON a un outil externe.
+Avantage: analyses SQL + export vers outils externes
 
+## API ENDPOINTS
+
+### Authentification
+- POST /register
+- POST /login (retourne token + cookie httpOnly)
+- POST /logout (supprime cookie)
+- GET /me
+
+### Fichiers (JWT requis)
+- POST /files/upload
+- GET /files/list
+- GET /files/view/{filename}
+- POST /files/edit/{filename}
+- GET /files/download/{filename}
+- PUT /files/rename/{old}
+- POST /files/{filename}/share
+- DELETE /files/{filename}
+- POST /files/{filename}/restore
+- GET /files/trash
+
+### Admin (role admin requis)
+- GET /admin/database (page HTML)
+- GET /admin/api/stats
+- GET /admin/api/tables
+- GET /admin/api/table/{name}
+- DELETE /admin/api/table/{name}/{id}
+
+## DOCKER COMMANDES
+
+Demarrer: docker compose up -d
+Arreter: docker compose down
+Logs API: docker logs ppp_api --tail 50
+Entrer PostgreSQL: docker exec -it ppp_postgres psql -U ueba_user -d ueba_db
+Redemarrer API: docker compose restart api
+Reconstruire: docker compose build api
+
+## URLS
+
+- Application: http://localhost:8000
+- Documentation API: http://localhost:8000/docs
+- Adminer (interface DB): http://localhost:8080
+  (System: PostgreSQL, Server: postgres, User: ueba_user, Password: ueba_pass, Database: ueba_db)
 
