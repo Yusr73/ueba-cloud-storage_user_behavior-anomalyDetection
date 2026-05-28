@@ -14,12 +14,16 @@ def require_admin(current_user = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Admin access required")
     return current_user
 
-# Page HTML - accessible à tous (la vérification se fait en JavaScript)
+# Pages HTML - accessibles à tous (la vérification se fait en JavaScript)
 @router.get("/database", response_class=HTMLResponse)
 async def database_viewer(request: Request):
     return templates.TemplateResponse("admin_database.html", {"request": request})
 
-# API - protégées par le backend
+@router.get("/detection", response_class=HTMLResponse)
+async def detection_dashboard(request: Request):
+    return templates.TemplateResponse("admin_detection.html", {"request": request})
+
+# API - protégées par require_admin
 @router.get("/api/stats")
 async def get_stats(current_user = Depends(require_admin)):
     conn = get_db()

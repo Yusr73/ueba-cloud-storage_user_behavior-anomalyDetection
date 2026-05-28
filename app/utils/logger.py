@@ -35,15 +35,23 @@ def write_log(event_type: str, uid: str, uid_type: str, params: dict,
             json.dumps(log_entry['location']) if log_entry['location'] else None
         ))
         result = cur.fetchone()
-        log_id = result['id']  # ← Correction ici
+        log_id = result['id']
         conn.commit()
         cur.close()
         conn.close()
         
-        # Pour logs.json, convertir datetime en ISO
-        log_json = log_entry.copy()
-        log_json['time'] = log_entry['time'].isoformat().replace('+00:00', 'Z')
-        log_json['id'] = log_id
+        # Convertir datetime en ISO
+        log_json = {
+            "id": log_id,  # ← id en premier
+            "time": log_entry['time'].isoformat().replace('+00:00', 'Z'),
+            "uid": log_entry['uid'],
+            "uid_type": log_entry['uid_type'],
+            "type": log_entry['type'],
+            "params": log_entry['params'],
+            "is_local_ip": log_entry['is_local_ip'],
+            "role": log_entry['role'],
+            "location": log_entry['location']
+        }
         
         os.makedirs("/app/logs", exist_ok=True)
         with open("/app/logs/logs.json", "a") as f:

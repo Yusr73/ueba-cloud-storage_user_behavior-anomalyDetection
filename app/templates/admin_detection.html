@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Detection Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f4f8; }
+        .container { max-width: 1400px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
+        h1, h2 { color: #2c7da0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #2c7da0; color: white; }
+        .high { background: #6a0dad; color: white; padding: 2px 6px; border-radius: 4px; display: inline-block; }
+        .medium { background: #f0a500; padding: 2px 6px; border-radius: 4px; display: inline-block; }
+        .data-theft { color: #c0392b; font-weight: bold; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 10px 20px; background: #e2e8f0; border: none; cursor: pointer; border-radius: 6px; }
+        .tab-btn.active { background: #2c7da0; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .access-denied { text-align: center; margin-top: 100px; }
+        .access-denied h1 { color: #c0392b; }
+        .loading { text-align: center; padding: 40px; color: #6c86a0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>UEBA Detection Dashboard</h1>
+        <a href="/admin/database">← Back to Admin</a>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('alice')">Alice (Consistent)</button>
+            <button class="tab-btn" onclick="showTab('bob')">Bob (Inconsistent)</button>
+        </div>
+        <div id="alice-tab" class="tab-content active">
+            <h2>Alice - Anomaly Detection Results</h2>
+            <div id="alice-stats"></div>
+            <div id="alice-table"></div>
+        </div>
+        <div id="bob-tab" class="tab-content">
+            <h2>Bob - Anomaly Detection Results</h2>
+            <div id="bob-stats"></div>
+            <div id="bob-table"></div>
+        </div>
+    </div>
+    <script>
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+        if (!token) window.location.href = '/login-page';
+        if (role !== 'admin') {
+            document.body.innerHTML = '<div class="access-denied"><h1>Accès refusé</h1><p>Vous devez être administrateur pour accéder à cette page.</p><a href="/dashboard">Retour au dashboard</a></div>';
+        } else {
+            loadData('alice');
+        }
+        function getAttackClass(attack) {
+            if (attack === 'DATA_THEFT') return 'data-theft';
+            return '';
+        }
+        function renderStats(data) {
+            if (data.error) return '<p style="color:red;">Error: ' + data.error + '</p>';
+            return '<p><strong>Total days analyzed:</strong> ' + data.total_days + '</p><p><strong>Flagged days:</strong> ' + data.flagged_days + '</p>';
+        }
+        function renderTable(data) {
+            if (data.error || !data.results) return '<p>No data available</p>';
+            var flagged = data.results.filter(function(r) { return r.anomaly_score > 0; });
+            if (flagged.length === 0) return '<p>No anomalies detected</p>';
+            var html = '<table><thead><tr><th>Date</th><th>Anomaly Score</th><th>Attack Type</th><th>Confidence</th><th>IF Flagged</th><th>Top Contributors</th></tr></thead><tbody>';
+            for (var i = 0; i < flagged.length; i++) {
+                var row = flagged[i];
+                html += '<tr><td>' + row.date + '</td><td>' + row.anomaly_score.toFixed(4) + '</td><td class="' + getAttackClass(row.attack_type) + '">' + row.attack_type + '</td><td><span class="' + (row.confidence === 'HIGH' ? 'high' : 'medium') + '">' + row.confidence + '</span></td><td>' + (row.if_flagged ? '✅' : '—') + '</td><td style="font-size:0.85em;">' + row.top_contributors + '</td></tr>';
+            }
+            html += '</tbody></table>';
+            return html;
+        }
+        async function loadData(user) {
+            var statsDiv = document.getElementById(user + '-stats');
+            var tableDiv = document.getElementById(user + '-table');
+            statsDiv.innerHTML = '<div class="loading">Loading...</div>';
+            tableDiv.innerHTML = '';
+            try {
+                var response = await fetch('/admin/detection/' + user, { headers: { 'Authorization': 'Bearer ' + token } });
+                var data = await response.json();
+                statsDiv.innerHTML = renderStats(data);
+                tableDiv.innerHTML = renderTable(data);
+            } catch(e) {
+                statsDiv.innerHTML = '<p style="color:red;">Error loading data</p>';
+            }
+        }
+        function showTab(tab) {
+            var btns = document.querySelectorAll('.tab-btn');
+            for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+            var contents = document.querySelectorAll('.tab-content');
+            for (var i = 0; i < contents.length; i++) contents[i].classList.remove('active');
+            var activeBtn = document.querySelector('.tab-btn[onclick="showTab(\'' + tab + '\')"]');
+            if (activeBtn) activeBtn.classList.add('active');
+            document.getElementById(tab + '-tab').classList.add('active');
+            loadData(tab);
+        }
+        window.showTab = showTab;
+    </script>
+</body>
+</html>
