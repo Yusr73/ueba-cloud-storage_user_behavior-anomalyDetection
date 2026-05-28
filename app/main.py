@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
-from routes import auth_routes, file_routes, web_routes, admin_routes
+from routes import auth_routes, file_routes, web_routes, admin_routes, detection_routes
 from models.database import init_database
 from config import Config
 import os
@@ -30,6 +30,7 @@ app.include_router(auth_routes.router)
 app.include_router(file_routes.router)
 app.include_router(web_routes.router)
 app.include_router(admin_routes.router)
+app.include_router(detection_routes.router)
 
 @app.on_event("startup")
 def startup():

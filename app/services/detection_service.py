@@ -26,9 +26,9 @@ class DetectionService:
         
         data = []
         for row in rows:
-            time = row[0]
-            event_type = row[1]
-            params = row[2] if row[2] else {}
+            time = row['time']
+            event_type = row['type']
+            params = row['params'] if row['params'] else {}
             if isinstance(params, str):
                 import json
                 try:
@@ -92,7 +92,7 @@ class DetectionService:
     
     @staticmethod
     def compute_global_baseline(daily_df, percentile=95):
-        if daily_df.empty or len(daily_df) < 7:
+        if daily_df.empty or len(daily_df) < 3:
             return pd.DataFrame()
         
         eps = 1e-9
@@ -132,7 +132,7 @@ class DetectionService:
     
     @staticmethod
     def compute_isolation_forest(daily_df, contamination=0.05):
-        if daily_df.empty or len(daily_df) < 7:
+        if daily_df.empty or len(daily_df) < 3:
             return pd.DataFrame()
         
         features_present = [f for f in DetectionService.FEATURES if f in daily_df.columns]
