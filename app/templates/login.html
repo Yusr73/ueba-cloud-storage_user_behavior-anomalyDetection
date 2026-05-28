@@ -134,44 +134,28 @@
             const password = document.getElementById('password').value;
             
             messageDiv.style.display = 'none';
-            messageDiv.textContent = '';
             
             try {
-                console.log('Envoi login pour:', username);
-                
                 const response = await fetch('/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
                 });
                 
-                console.log('Status:', response.status);
-                
                 const data = await response.json();
-                console.log('Données reçues:', data);
-                console.log('access_token:', data.access_token);
                 
                 if (response.ok) {
-                    if (data.access_token) {
-                        localStorage.setItem('token', data.access_token);
-                        localStorage.setItem('user', username);
-                        localStorage.setItem('uid', data.uid || '');
-                        localStorage.setItem('role', data.role || 'user');
-                        console.log('Token stocké, redirection...');
-                        window.location.href = '/dashboard';
-                    } else {
-                        console.error('Pas de token dans la réponse');
-                        messageDiv.textContent = 'Erreur: pas de token reçu';
-                        messageDiv.className = 'message error';
-                        messageDiv.style.display = 'block';
-                    }
+                    localStorage.setItem('token', data.access_token);
+                    localStorage.setItem('user', username);
+                    localStorage.setItem('uid', data.uid);
+                    localStorage.setItem('role', data.role);
+                    window.location.href = '/dashboard';
                 } else {
                     messageDiv.textContent = data.detail || 'Invalid credentials';
                     messageDiv.className = 'message error';
                     messageDiv.style.display = 'block';
                 }
             } catch (error) {
-                console.error('Erreur:', error);
                 messageDiv.textContent = 'Connection error. Please try again.';
                 messageDiv.className = 'message error';
                 messageDiv.style.display = 'block';

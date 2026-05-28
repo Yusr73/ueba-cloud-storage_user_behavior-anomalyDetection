@@ -1,12 +1,11 @@
 from fastapi import FastAPI
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from routes import auth_routes, file_routes, web_routes, admin_routes
 from models.database import init_database
 from config import Config
 import os
 
-# Security headers middleware
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         response = await call_next(request)
@@ -18,14 +17,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 app = FastAPI(title="UEBA Cloud Storage")
 
-# Add security middleware
-app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=["localhost", "127.0.0.1", "0.0.0.0"]
+    CORSMiddleware,
+    allow_origins=["http://localhost:8000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+app.add_middleware(SecurityHeadersMiddleware)
 
-# Include all routes
 app.include_router(auth_routes.router)
 app.include_router(file_routes.router)
 app.include_router(web_routes.router)

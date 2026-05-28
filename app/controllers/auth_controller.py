@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status, Request, Response
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from models.user_model import UserModel
 from utils.security import create_access_token, decode_token
@@ -26,7 +26,7 @@ class AuthController:
         raise HTTPException(status_code=400, detail="Username already exists")
     
     @staticmethod
-    def login(username: str, password: str, response: Response):
+    def login(username: str, password: str):
         user = UserModel.authenticate(username, password)
         
         write_log(
@@ -58,16 +58,6 @@ class AuthController:
             "uid": user['uid']
         })
         
-        # Set httpOnly cookie
-        response.set_cookie(
-            key="access_token",
-            value=token,
-            httponly=True,
-            secure=False,
-            samesite="lax",
-            max_age=3600
-        )
-        
         return {
             "access_token": token,
             "token_type": "bearer",
@@ -76,7 +66,7 @@ class AuthController:
         }
     
     @staticmethod
-    def logout(response: Response, current_user):
+    def logout(current_user):
         write_log(
             event_type="logout_occured",
             uid=current_user['uid'],
@@ -86,24 +76,11 @@ class AuthController:
             is_local_ip=True,
             location={"city": "unknown"}
         )
-        response.delete_cookie("access_token")
         return {"message": "Logged out"}
 
 
-def get_current_user(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    token = None
-    
-    # Try Authorization header first
-    if credentials:
-        token = credentials.credentials
-    
-    # Try cookie if no header
-    if not token:
-        token = request.cookies.get('access_token')
-    
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
     payload = decode_token(token)
     
     if not payload:

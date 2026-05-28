@@ -85,11 +85,25 @@
         const filename = window.location.pathname.split('/').pop();
         if (!token) { window.location.href = '/login-page'; }
         document.getElementById('filename').innerText = filename;
+        
+        async function apiCall(url, options = {}) {
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    'Authorization': 'Bearer ' + token
+                }
+            });
+            if (response.status === 401 || response.status === 403) {
+                window.location.href = '/login-page';
+                throw new Error('Unauthorized');
+            }
+            return response;
+        }
+        
         async function loadFile() {
             try {
-                const response = await fetch(`/files/view/${filename}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const response = await apiCall(`/files/view/${filename}`);
                 if (response.ok) {
                     const data = await response.json();
                     document.getElementById('editor').value = data.content || '';
@@ -98,14 +112,14 @@
                 } else { alert('Error loading file'); }
             } catch (error) { console.error('Error:', error); alert('Error loading file'); }
         }
+        
         async function saveFile() {
             const content = document.getElementById('editor').value;
             const formData = new FormData();
             formData.append('content', content);
             try {
-                const response = await fetch(`/files/edit/${filename}`, {
+                const response = await apiCall(`/files/edit/${filename}`, {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` },
                     body: formData
                 });
                 if (response.ok) {
@@ -115,10 +129,13 @@
                 } else { alert('Error saving file'); }
             } catch (error) { console.error('Error:', error); alert('Error saving file'); }
         }
+        
         function closeEditor() { window.location.href = '/dashboard'; }
+        
         document.addEventListener('keydown', (e) => {
             if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveFile(); }
         });
+        
         loadFile();
     </script>
 </body>

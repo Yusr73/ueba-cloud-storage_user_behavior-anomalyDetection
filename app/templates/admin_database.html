@@ -48,9 +48,13 @@
             loadStats();
         }
         
-        async function apiCall(url) {
+        async function apiCall(url, options = {}) {
             const response = await fetch(url, {
-                headers: { 'Authorization': 'Bearer ' + token }
+                ...options,
+                headers: {
+                    ...options.headers,
+                    'Authorization': 'Bearer ' + token
+                }
             });
             if (!response.ok) throw new Error('Erreur ' + response.status);
             return response.json();
