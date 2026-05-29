@@ -3,65 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Editor - UEBA Cloud Storage</title>
+    <title>UEBA · Editor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
-            background: #f0f4f8;
+            background: #eef2f7;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #0a1c2a;
+            line-height: 1.45;
+            -webkit-font-smoothing: antialiased;
             display: flex;
             flex-direction: column;
             height: 100vh;
         }
+
+        /* Toolbar */
         .toolbar {
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 12px 24px;
+            background: #ffffff;
+            border-bottom: 2px solid #dce5ec;
+            padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 16px;
+            gap: 1rem;
         }
-        .file-info { display: flex; align-items: center; gap: 16px; }
-        .file-info h3 { color: #1a3a5c; font-weight: 500; font-size: 16px; }
-        .btn-group { display: flex; gap: 12px; }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .file-info h3 {
+            color: #1a5a7a;
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: -0.2px;
+        }
+
+        .status {
+            color: #2a7a5c;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: #e0f0ea;
+            padding: 0.25rem 0.8rem;
+            border-radius: 2rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+        }
+
         .btn {
-            padding: 6px 16px;
+            padding: 0.5rem 1.3rem;
             border: none;
-            border-radius: 6px;
+            border-radius: 2rem;
             cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            font-family: inherit;
+            font-size: 0.75rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
         }
-        .btn-save { background: #2c7da0; color: white; }
-        .btn-save:hover { background: #1f5e7a; }
-        .btn-close { background: #e2e8f0; color: #1a3a5c; }
-        .btn-close:hover { background: #cbd5e0; }
-        .status { color: #1e8449; font-size: 12px; }
-        .editor-container { flex: 1; padding: 20px; background: #f8fafc; }
+
+        .btn-save {
+            background: #1a5a7a;
+            color: white;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .btn-save:hover {
+            background: #2c7da0;
+            transform: translateY(-1px);
+        }
+
+        .btn-close {
+            background: #eef3f7;
+            color: #1a5a7a;
+            border: 1px solid #dce5ec;
+        }
+
+        .btn-close:hover {
+            background: #e8eef3;
+            transform: translateY(-1px);
+        }
+
+        /* Editor container */
+        .editor-container {
+            flex: 1;
+            padding: 1.5rem;
+            background: #f8fafc;
+        }
+
         textarea {
             width: 100%;
             height: 100%;
-            padding: 20px;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
-            font-size: 14px;
+            padding: 1.25rem;
+            border: 1px solid #dce5ec;
+            border-radius: 1rem;
+            font-family: 'SF Mono', 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.85rem;
             line-height: 1.6;
-            background: white;
+            background: #ffffff;
             resize: none;
             outline: none;
+            color: #0a1c2a;
+            transition: all 0.2s;
         }
-        textarea:focus { border-color: #2c7da0; box-shadow: 0 0 0 3px rgba(44,125,160,0.1); }
+
+        textarea:focus {
+            border-color: #1a5a7a;
+            box-shadow: 0 0 0 3px rgba(26, 90, 122, 0.1);
+        }
+
+        /* Shortcut hint */
         .shortcut-hint {
-            background: #f8fafc;
-            padding: 8px 20px;
-            font-size: 11px;
-            color: #6c86a0;
+            background: #ffffff;
+            padding: 0.6rem 1.5rem;
+            font-size: 0.7rem;
+            color: #8aaec2;
             text-align: center;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid #dce5ec;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .toolbar {
+                padding: 0.75rem 1rem;
+            }
+            .editor-container {
+                padding: 1rem;
+            }
+            .btn {
+                padding: 0.4rem 1rem;
+                font-size: 0.7rem;
+            }
         }
     </style>
 </head>
@@ -76,16 +159,21 @@
             <button class="btn btn-close" onclick="closeEditor()">Close</button>
         </div>
     </div>
+
     <div class="editor-container">
         <textarea id="editor" placeholder="Start typing..."></textarea>
     </div>
-    <div class="shortcut-hint">Press Ctrl + S to save</div>
+
+    <div class="shortcut-hint">
+        Press Ctrl + S to save
+    </div>
+
     <script>
         const token = localStorage.getItem('token');
         const filename = window.location.pathname.split('/').pop();
         if (!token) { window.location.href = '/login-page'; }
         document.getElementById('filename').innerText = filename;
-        
+
         async function apiCall(url, options = {}) {
             const response = await fetch(url, {
                 ...options,
@@ -100,7 +188,7 @@
             }
             return response;
         }
-        
+
         async function loadFile() {
             try {
                 const response = await apiCall(`/files/view/${filename}`);
@@ -109,10 +197,15 @@
                     document.getElementById('editor').value = data.content || '';
                 } else if (response.status === 404) {
                     document.getElementById('editor').value = '';
-                } else { alert('Error loading file'); }
-            } catch (error) { console.error('Error:', error); alert('Error loading file'); }
+                } else {
+                    alert('Error loading file');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error loading file');
+            }
         }
-        
+
         async function saveFile() {
             const content = document.getElementById('editor').value;
             const formData = new FormData();
@@ -126,16 +219,26 @@
                     const status = document.getElementById('status');
                     status.innerText = 'Saved at ' + new Date().toLocaleTimeString();
                     setTimeout(() => { status.innerText = ''; }, 2000);
-                } else { alert('Error saving file'); }
-            } catch (error) { console.error('Error:', error); alert('Error saving file'); }
+                } else {
+                    alert('Error saving file');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error saving file');
+            }
         }
-        
-        function closeEditor() { window.location.href = '/dashboard'; }
-        
+
+        function closeEditor() {
+            window.location.href = '/dashboard';
+        }
+
         document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveFile(); }
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveFile();
+            }
         });
-        
+
         loadFile();
     </script>
 </body>

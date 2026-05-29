@@ -3,123 +3,292 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
+    <title>UEBA · Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f0f4f8; }
-        .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
-        .error { color: red; text-align: center; padding: 50px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background: #2c7da0; color: white; }
-        .btn-danger { background: #c0392b; color: white; border: none; padding: 4px 8px; cursor: pointer; border-radius: 4px; }
-        select, button { padding: 8px; margin: 5px; }
-        .admin-only { display: none; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #eef2f7;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #0a1c2a;
+            line-height: 1.45;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .header {
+            background: #ffffff;
+            border-bottom: 2px solid #dce5ec;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .logo { display: flex; align-items: center; gap: 0.75rem; }
+        .logo-icon {
+            width: 42px; height: 42px;
+            background: linear-gradient(135deg, #1a5a7a, #2c7da0);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .logo-icon span { color: white; font-size: 1.3rem; font-weight: 700; }
+        .logo-text .primary { font-size: 1.4rem; font-weight: 800; color: #1a5a7a; letter-spacing: -0.3px; }
+        .logo-text .secondary { font-size: 0.6rem; font-weight: 600; color: #8aaec2; letter-spacing: 0.5px; text-transform: uppercase; }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: #f0f4f8;
+            padding: 0.3rem 0.3rem 0.3rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid #dce5ec;
+        }
+        .user-name { font-size: 0.85rem; font-weight: 600; color: #1a5a7a; }
+        .btn-logout {
+            background: #e2edf2;
+            border: none;
+            border-radius: 2rem;
+            padding: 0.45rem 1.3rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1a5a7a;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-logout:hover { background: #d0e0e8; transform: translateY(-1px); }
+
+        .container { max-width: 1280px; margin: 0 auto; padding: 2rem; }
+
+        .card {
+            background: #ffffff;
+            border: 1px solid #dce5ec;
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .card-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #8aaec2;
+            margin-bottom: 1.25rem;
+        }
+        .stat-grid { display: flex; gap: 2rem; flex-wrap: wrap; }
+        .stat-item { flex: 1; }
+        .stat-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: #8aaec2; margin-bottom: 0.25rem; }
+        .stat-number { font-size: 1.5rem; font-weight: 700; color: #1a5a7a; }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .table-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #8aaec2; }
+        .table-controls { display: flex; gap: 0.75rem; align-items: center; }
+        .table-controls select {
+            background: white;
+            border: 1px solid #dce5ec;
+            border-radius: 2rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            color: #1a5a7a;
+            cursor: pointer;
+        }
+        .table-controls button {
+            background: #1a5a7a;
+            border: none;
+            border-radius: 2rem;
+            padding: 0.5rem 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .table-controls button:hover { background: #2c7da0; transform: translateY(-1px); }
+
+        .table-wrapper { overflow-x: auto; }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #ffffff;
+            border: 1px solid #dce5ec;
+            border-radius: 1rem;
+            overflow: hidden;
+            font-size: 0.8rem;
+        }
+        .data-table th {
+            text-align: left;
+            padding: 0.9rem 1rem;
+            background: #f8fafc;
+            font-weight: 700;
+            color: #1a5a7a;
+            border-bottom: 1px solid #dce5ec;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .data-table td {
+            padding: 0.9rem 1rem;
+            border-bottom: 1px solid #eef2f7;
+            color: #2c4e6e;
+            font-weight: 500;
+        }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover td { background: #fafcfd; }
+
+        .btn-danger {
+            background: #fee6e3;
+            border: none;
+            color: #b33c2a;
+            padding: 0.35rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-danger:hover { background: #fdd8d4; transform: translateY(-1px); }
+
+        .empty-message { text-align: center; padding: 2rem; color: #a9c0cf; font-size: 0.85rem; font-weight: 500; }
+        .access-denied { text-align: center; padding: 2.5rem; background: white; border-radius: 1rem; margin: 1rem; border: 1px solid #dce5ec; }
+        .access-denied h1 { font-size: 1.2rem; color: #b33c2a; margin-bottom: 0.5rem; }
+
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .stat-grid { flex-direction: column; gap: 1rem; }
+            .table-header { flex-direction: column; align-items: flex-start; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Administration Panel</h1>
-        <div id="message"></div>
-        <div id="admin-content" class="admin-only">
-            <h2>Tables</h2>
-            <select id="table-select">
-                <option value="users">Users</option>
-                <option value="logs">Logs</option>
-                <option value="files">Files</option>
-                <option value="shares">Shares</option>
-            </select>
-            <button onclick="loadTableData()">Load</button>
-            <div id="table-data"></div>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon"><span>☁</span></div>
+                <div class="logo-text"><div class="primary">UEBA</div><div class="secondary">cloud storage</div></div>
+            </div>
+            <div class="user-info">
+                <span class="user-name" id="username"></span>
+                <button class="btn-logout" onclick="logout()">Sign out</button>
+            </div>
         </div>
+    </div>
+
+    <div class="container">
+        <div id="stats-container"></div>
+        <div id="admin-container"></div>
     </div>
 
     <script>
         const token = localStorage.getItem('token');
         const role = localStorage.getItem('role');
-        
-        if (!token) {
-            window.location.href = '/login-page';
-        }
-        
+        if (!token) window.location.href = '/login-page';
+        document.getElementById('username').innerText = localStorage.getItem('user') || 'User';
+
         if (role !== 'admin') {
-            document.getElementById('message').innerHTML = '<div class="error"><h2>Accès refusé</h2><p>Vous devez être administrateur pour accéder à cette page.</p><a href="/dashboard">Retour au dashboard</a></div>';
+            document.getElementById('stats-container').innerHTML = '';
+            document.getElementById('admin-container').innerHTML = `<div class="access-denied"><h1>Access denied</h1><p>Administrator privileges required.</p><a href="/dashboard" style="color:#1a5a7a; font-weight:600;">← Back to Dashboard</a></div>`;
         } else {
-            document.getElementById('admin-content').style.display = 'block';
-            loadStats();
+            initAdmin();
         }
-        
+
         async function apiCall(url, options = {}) {
-            const response = await fetch(url, {
-                ...options,
-                headers: {
-                    ...options.headers,
-                    'Authorization': 'Bearer ' + token
-                }
-            });
-            if (!response.ok) throw new Error('Erreur ' + response.status);
-            return response.json();
+            const r = await fetch(url, { ...options, headers: { ...options.headers, 'Authorization': 'Bearer ' + token } });
+            if (!r.ok) throw new Error(r.status);
+            return r.json();
         }
-        
+
         async function loadStats() {
+            const container = document.getElementById('stats-container');
+            container.innerHTML = '<div class="empty-message">Loading...</div>';
             try {
                 const data = await apiCall('/admin/api/stats');
-                let html = '<h2>Statistiques</h2><table><tr><th>Table</th><th>Nombre</th></tr>';
+                let html = `<div class="card"><div class="card-title">Database statistics</div><div class="stat-grid">`;
                 for (const [table, count] of Object.entries(data.counts)) {
-                    html += `<tr><td>${table}</td><td>${count}</td></tr>`;
+                    html += `<div class="stat-item"><div class="stat-label">${table.toUpperCase()}</div><div class="stat-number">${count}</div></div>`;
                 }
-                html += '</table>';
-                document.getElementById('message').innerHTML = html;
-            } catch(e) {
-                document.getElementById('message').innerHTML = '<p class="error">Erreur chargement stats</p>';
-            }
+                html += `</div></div>`;
+                container.innerHTML = html;
+            } catch(e) { container.innerHTML = '<div class="empty-message">Error loading stats</div>'; }
         }
-        
+
+        window.deleteRecord = async function(table, id) {
+            if (!confirm(`Delete record ${id} from ${table}?`)) return;
+            try {
+                const r = await fetch(`/admin/api/table/${table}/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+                const result = await r.json();
+                if (result.success) { alert('Deleted'); loadStats(); loadTableData(); }
+                else alert('Error: ' + result.error);
+            } catch(e) { alert('Error'); }
+        };
+
         async function loadTableData() {
             const table = document.getElementById('table-select').value;
+            const container = document.getElementById('table-data');
+            container.innerHTML = '<div class="empty-message">Loading...</div>';
             try {
                 const data = await apiCall(`/admin/api/table/${table}`);
-                if (!data.data.length) {
-                    document.getElementById('table-data').innerHTML = '<p>Aucune donnée</p>';
-                    return;
-                }
-                let html = '<table><tr>';
+                if (!data.data || data.data.length === 0) { container.innerHTML = '<div class="empty-message">No records found</div>'; return; }
+                let html = `<div class="table-wrapper"><table class="data-table"><thead><tr>`;
                 for (const col of data.columns) html += `<th>${col.name}</th>`;
-                html += '<th>Action</th></tr>';
+                html += `<th>Action</th></tr></thead><tbody>`;
                 for (const row of data.data) {
-                    html += '<tr>';
+                    html += `<tr>`;
                     for (const col of data.columns) {
                         let val = row[col.name];
-                        if (val && val.length > 50) val = val.substring(0, 50) + '...';
-                        html += `<td>${val || '-'}</td>`;
+                        if (val && typeof val === 'string' && val.length > 60) val = val.substring(0,57)+'...';
+                        html += `<td title="${row[col.name]||''}">${val !== null && val !== undefined ? String(val).substring(0,60) : '-'}</td>`;
                     }
-                    html += `<td><button class="btn-danger" onclick="deleteRecord('${table}', ${row.id})">Supprimer</button></td>`;
-                    html += '</tr>';
+                    html += `<td><button class="btn-danger" onclick="deleteRecord('${table}', ${row.id})">Delete</button></td>`;
+                    html += `</tr>`;
                 }
-                html += '</table>';
-                document.getElementById('table-data').innerHTML = html;
-            } catch(e) {
-                document.getElementById('table-data').innerHTML = '<p class="error">Erreur chargement</p>';
-            }
+                html += `</tbody></table></div>`;
+                container.innerHTML = html;
+            } catch(e) { container.innerHTML = '<div class="empty-message">Error loading table data</div>'; }
         }
-        
-        async function deleteRecord(table, id) {
-            if (!confirm(`Supprimer l'enregistrement ${id} ?`)) return;
-            try {
-                const response = await fetch(`/admin/api/table/${table}/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                const result = await response.json();
-                if (result.success) {
-                    alert('Supprimé');
-                    loadTableData();
-                    loadStats();
-                } else {
-                    alert('Erreur: ' + result.error);
-                }
-            } catch(e) {
-                alert('Erreur');
-            }
+
+        function initAdmin() {
+            document.getElementById('admin-container').innerHTML = `
+                <div class="card">
+                    <div class="card-title">Database tables</div>
+                    <div class="table-header">
+                        <div class="table-title">Browse data</div>
+                        <div class="table-controls">
+                            <select id="table-select"><option value="users">Users</option><option value="logs">Logs</option><option value="files">Files</option><option value="shares">Shares</option></select>
+                            <button onclick="loadTableData()">Load data</button>
+                        </div>
+                    </div>
+                    <div id="table-data"></div>
+                </div>
+            `;
+            loadStats();
+            loadTableData();
+        }
+
+        async function logout() {
+            await fetch('/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
+            localStorage.clear();
+            window.location.href = '/login-page';
         }
     </script>
 </body>

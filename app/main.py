@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from routes import auth_routes, file_routes, web_routes, admin_routes, detection_routes
@@ -16,6 +17,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 app = FastAPI(title="UEBA Cloud Storage")
+
+# Servir les fichiers statiques
+os.makedirs("/app/static", exist_ok=True)
+app.mount("/static", StaticFiles(directory="/app/static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,

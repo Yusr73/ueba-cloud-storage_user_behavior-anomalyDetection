@@ -3,193 +3,411 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detection Dashboard</title>
+    <title>UEBA · Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f4f8; }
-        .container { max-width: 1400px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
-        h1, h2, h3 { color: #2c7da0; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
-        th { background: #2c7da0; color: white; }
-        .high { background: #6a0dad; color: white; padding: 2px 6px; border-radius: 4px; display: inline-block; }
-        .medium { background: #f0a500; padding: 2px 6px; border-radius: 4px; display: inline-block; }
-        .data-theft { color: #c0392b; font-weight: bold; }
-        .directory { color: #8e44ad; font-weight: bold; }
-        .login { color: #2980b9; font-weight: bold; }
-        .off-hours { color: #16a085; font-weight: bold; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab-btn { padding: 10px 20px; background: #e2e8f0; border: none; cursor: pointer; border-radius: 6px; }
-        .tab-btn.active { background: #2c7da0; color: white; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .loading { text-align: center; padding: 40px; color: #6c86a0; }
-        .access-denied { text-align: center; margin-top: 100px; }
-        .access-denied h1 { color: #c0392b; }
-        .alert { background: #ffe0e0; border-left: 4px solid #c0392b; padding: 10px; margin: 5px 0; }
-        .alert-warning { background: #fff0e0; border-left: 4px solid #e67e22; }
-        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-        .badge-stable { background: #27ae60; color: white; }
-        .badge-instable { background: #e67e22; color: white; }
-        .section { margin-top: 30px; border-top: 2px solid #ddd; padding-top: 20px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #eef2f7;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #0a1c2a;
+            line-height: 1.45;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Header */
+        .header {
+            background: #ffffff;
+            border-bottom: 2px solid #dce5ec;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .logo { display: flex; align-items: center; gap: 0.75rem; }
+        .logo-icon {
+            width: 42px; height: 42px;
+            background: linear-gradient(135deg, #1a5a7a, #2c7da0);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .logo-icon span { color: white; font-size: 1.3rem; font-weight: 700; }
+        .logo-text .primary { font-size: 1.4rem; font-weight: 800; color: #1a5a7a; letter-spacing: -0.3px; }
+        .logo-text .secondary { font-size: 0.6rem; font-weight: 600; color: #8aaec2; letter-spacing: 0.5px; text-transform: uppercase; }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: #f0f4f8;
+            padding: 0.3rem 0.3rem 0.3rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid #dce5ec;
+        }
+        .user-name { font-size: 0.85rem; font-weight: 600; color: #1a5a7a; }
+        .btn-logout {
+            background: #e2edf2;
+            border: none;
+            border-radius: 2rem;
+            padding: 0.45rem 1.3rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1a5a7a;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-logout:hover { background: #d0e0e8; transform: translateY(-1px); }
+
+        .container { max-width: 1280px; margin: 0 auto; padding: 2rem; }
+
+        /* Control bar */
+        .control-bar {
+            background: #ffffff;
+            border: 1px solid #dce5ec;
+            border-radius: 1rem;
+            padding: 0.7rem 1.2rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .btn-outline {
+            background: #f0f4f8;
+            border: 1px solid #dce5ec;
+            border-radius: 2rem;
+            padding: 0.4rem 1.2rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1a5a7a;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-outline:hover { background: #e8eef3; transform: translateY(-1px); }
+        .status-text { font-size: 0.75rem; color: #8aaec2; font-weight: 500; }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #dce5ec;
+            padding-bottom: 0.5rem;
+        }
+        .tab {
+            background: none;
+            border: none;
+            padding: 0.5rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #8aaec2;
+            cursor: pointer;
+            border-radius: 2rem;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: #1a5a7a; background: #f0f6fa; }
+        .tab.active { color: #1a5a7a; background: #f0f6fa; }
+
+        /* Cards */
+        .card {
+            background: #ffffff;
+            border: 1px solid #dce5ec;
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .card-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #8aaec2;
+            margin-bottom: 1.25rem;
+        }
+        .stat-grid { display: flex; gap: 2rem; flex-wrap: wrap; }
+        .stat-item { flex: 1; }
+        .stat-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: #8aaec2; margin-bottom: 0.25rem; }
+        .stat-number { font-size: 1.5rem; font-weight: 700; color: #1a5a7a; }
+
+        /* Table */
+        .table-wrapper { overflow-x: auto; margin-bottom: 1rem; }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #ffffff;
+            border: 1px solid #dce5ec;
+            border-radius: 1rem;
+            overflow: hidden;
+            font-size: 0.8rem;
+        }
+        .data-table th {
+            text-align: left;
+            padding: 0.9rem 1rem;
+            background: #f8fafc;
+            font-weight: 700;
+            color: #1a5a7a;
+            border-bottom: 1px solid #dce5ec;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .data-table td {
+            padding: 0.9rem 1rem;
+            border-bottom: 1px solid #eef2f7;
+            color: #2c4e6e;
+            font-weight: 500;
+        }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover td { background: #fafcfd; }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .badge-data-theft { background: #fee6e3; color: #b33c2a; }
+        .badge-directory { background: #eee5fc; color: #5e3a8c; }
+        .badge-login { background: #e2edfa; color: #2a6d9c; }
+        .badge-off-hours { background: #ddf3f0; color: #2a6e6a; }
+        .badge-unknown { background: #eef2f5; color: #5e7e96; }
+
+        .confidence-high { background: #1a5a7a; color: white; padding: 0.25rem 0.8rem; border-radius: 2rem; font-size: 0.7rem; font-weight: 600; display: inline-block; }
+        .confidence-medium { background: #e6a157; color: white; padding: 0.25rem 0.8rem; border-radius: 2rem; font-size: 0.7rem; font-weight: 600; display: inline-block; }
+
+        /* Alert item */
+        .alert-item {
+            background: #fafcfd;
+            border-left: 4px solid #1a5a7a;
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.6rem;
+            border-radius: 0.75rem;
+            border: 1px solid #eef2f7;
+        }
+        .alert-title { font-weight: 700; font-size: 0.8rem; margin-bottom: 0.25rem; color: #1a3a4a; }
+        .alert-detail { font-size: 0.75rem; color: #8aaec2; font-weight: 500; }
+
+        .empty-message { text-align: center; padding: 2rem; color: #a9c0cf; font-size: 0.85rem; font-weight: 500; }
+        .access-denied { text-align: center; padding: 2.5rem; background: white; border-radius: 1rem; border: 1px solid #dce5ec; }
+        .access-denied h1 { font-size: 1.2rem; color: #b33c2a; margin-bottom: 0.5rem; }
+
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .stat-grid { flex-direction: column; gap: 1rem; }
+            .control-bar { flex-direction: column; align-items: stretch; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>UEBA Detection Dashboard</h1>
-        <a href="/admin/database">← Back to Admin</a>
-        
-        <div class="tabs">
-            <button class="tab-btn active" onclick="showTab('alice')">Alice (Consistent)</button>
-            <button class="tab-btn" onclick="showTab('bob')">Bob (Inconsistent)</button>
-        </div>
-        
-        <div id="alice-tab" class="tab-content active">
-            <h2>Alice - Daily Anomalies</h2>
-            <div id="alice-stats"></div>
-            <div id="alice-table"></div>
-            <div id="alice-rare"></div>
-        </div>
-        
-        <div id="bob-tab" class="tab-content">
-            <h2>Bob - Daily Anomalies</h2>
-            <div id="bob-stats"></div>
-            <div id="bob-table"></div>
-            <div id="bob-rare"></div>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon"><span>☁</span></div>
+                <div class="logo-text"><div class="primary">UEBA</div><div class="secondary">cloud storage</div></div>
+            </div>
+            <div class="user-info">
+                <span class="user-name" id="username"></span>
+                <button class="btn-logout" onclick="logout()">Sign out</button>
+            </div>
         </div>
     </div>
-    
+
+    <div class="container">
+        <div class="control-bar">
+            <button id="refreshToggleBtn" class="btn-outline">Pause</button>
+            <span id="refreshStatus" class="status-text">Auto-refresh every 30s</span>
+            <button onclick="location.reload()" class="btn-outline">Refresh</button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="alice">Alice · stable</button>
+            <button class="tab" data-tab="bob">Bob · unstable</button>
+        </div>
+
+        <div id="alice-tab"><div id="alice-stats"></div><div id="alice-alerts"></div><div id="alice-table"></div><div id="alice-thresholds"></div></div>
+        <div id="bob-tab" style="display:none;"><div id="bob-stats"></div><div id="bob-alerts"></div><div id="bob-table"></div><div id="bob-thresholds"></div></div>
+    </div>
+
     <script>
         const token = localStorage.getItem('token');
         const role = localStorage.getItem('role');
-        
         if (!token) window.location.href = '/login-page';
+        document.getElementById('username').innerText = localStorage.getItem('user') || 'User';
+
         if (role !== 'admin') {
-            document.body.innerHTML = '<div class="access-denied"><h1>Accès refusé</h1><p>Vous devez être administrateur.</p><a href="/dashboard">Retour</a></div>';
+            document.body.innerHTML = '<div class="access-denied"><h1>Access denied</h1><p>Administrator privileges required.</p><a href="/dashboard" style="color:#1a5a7a; font-weight:600;">← Back to Dashboard</a></div>';
         }
-        
-        function getAttackClass(attack) {
-            if (attack === 'DATA_THEFT') return 'data-theft';
-            if (attack === 'DIRECTORY_TRAVERSAL') return 'directory';
-            if (attack === 'LOGIN_ACTIVITY') return 'login';
-            if (attack === 'OFF_HOURS') return 'off-hours';
-            return 'unknown';
+
+        let refreshInterval = null;
+        let currentUser = 'alice';
+
+        function attackClass(t) {
+            if (t === 'DATA_THEFT') return 'badge-data-theft';
+            if (t === 'DIRECTORY_TRAVERSAL') return 'badge-directory';
+            if (t === 'LOGIN_ACTIVITY') return 'badge-login';
+            if (t === 'OFF_HOURS') return 'badge-off-hours';
+            return 'badge-unknown';
         }
-        
-        function renderStats(data) {
-            if (data.error) return '<p style="color:red;">Error: ' + data.error + '</p>';
-            return '<p><strong>Total days analyzed:</strong> ' + data.total_days + '</p>' +
-                   '<p><strong>Flagged days:</strong> ' + data.flagged_days + '</p>';
+
+        function renderStats(d) {
+            if (d.error) return `<div class="empty-message">${d.error}</div>`;
+            return `<div class="card"><div class="stat-grid">
+                <div class="stat-item"><div class="stat-label">Days analyzed</div><div class="stat-number">${d.total_days}</div></div>
+                <div class="stat-item"><div class="stat-label">Flagged days</div><div class="stat-number">${d.flagged_days}</div></div>
+            </div></div>`;
         }
-        
-        function renderTable(data) {
-            if (data.error || !data.results) return '<p>No data available</p>';
-            var flagged = data.results.filter(function(r) { return r.anomaly_score > 0; });
-            if (flagged.length === 0) return '<p>No anomalies detected</p>';
-            var html = '<table><thead><tr><th>Date</th><th>Score</th><th>Attack Type</th><th>Confidence</th><th>IF Flagged</th><th>Verification</th><th>Top Contributors</th></tr></thead><tbody>';
-            for (var i = 0; i < flagged.length; i++) {
-                var row = flagged[i];
-                var verif = [];
-                if (row.data_theft_verification) verif.push('DATA_THEFT: ' + row.data_theft_verification);
-                if (row.login_verification) verif.push('LOGIN: ' + row.login_verification);
-                html += '<tr><td>' + row.date + '</td><td>' + row.anomaly_score.toFixed(4) + '</td><td class="' + getAttackClass(row.attack_type) + '">' + row.attack_type + '</td><td><span class="' + (row.confidence === 'HIGH' ? 'high' : 'medium') + '">' + row.confidence + '</span></td><td>' + (row.if_flagged ? '✅' : '—') + '</td><td>' + (verif.join('; ') || '—') + '</td><td style="font-size:0.85em;">' + row.top_contributors + '</td></tr>';
-            }
-            html += '</tbody></table>';
+
+        function renderAlerts(rd) {
+            if (rd.error) return `<div class="empty-message">${rd.error}</div>`;
+            const isStable = rd.profile === 'stable';
+            let html = `<div class="card"><div class="card-title">Real-time alerts · ${isStable ? 'Stable (x2)' : 'Unstable (x3)'}</div>`;
+            
+            const catRansom = rd.anomalies.ransomware;
+            const catDelete = rd.anomalies.mass_deletion;
+            const catUpload = rd.anomalies.malicious_upload;
+            const catAccount = rd.anomalies.account_takeover;
+
+            html += `<div style="margin-bottom:1rem;"><div class="card-title" style="margin-bottom:0.5rem;">Ransomware (writes/min)</div>`;
+            if (!catRansom || catRansom.length === 0) html += `<div class="empty-message" style="padding:0.75rem;">No spikes detected</div>`;
+            else for (const a of catRansom) html += `<div class="alert-item"><div class="alert-title">Spike detected</div><div class="alert-detail">${a.time} — ${a.count} writes (threshold: ${a.threshold})</div></div>`;
+            html += `</div>`;
+
+            html += `<div style="margin-bottom:1rem;"><div class="card-title" style="margin-bottom:0.5rem;">Mass deletion (deletes/5min)</div>`;
+            if (!catDelete || catDelete.length === 0) html += `<div class="empty-message" style="padding:0.75rem;">No spikes detected</div>`;
+            else for (const a of catDelete) html += `<div class="alert-item"><div class="alert-title">Spike detected</div><div class="alert-detail">${a.time} — ${a.count} deletions (threshold: ${a.threshold})</div></div>`;
+            html += `</div>`;
+
+            html += `<div style="margin-bottom:1rem;"><div class="card-title" style="margin-bottom:0.5rem;">Malicious upload (creates/5min)</div>`;
+            if (!catUpload || catUpload.length === 0) html += `<div class="empty-message" style="padding:0.75rem;">No spikes detected</div>`;
+            else for (const a of catUpload) html += `<div class="alert-item"><div class="alert-title">Spike detected</div><div class="alert-detail">${a.time} — ${a.count} creations (threshold: ${a.threshold})</div></div>`;
+            html += `</div>`;
+
+            html += `<div><div class="card-title" style="margin-bottom:0.5rem;">Account takeover (accesses after login)</div>`;
+            if (!catAccount || catAccount.length === 0) html += `<div class="empty-message" style="padding:0.75rem;">No spikes detected</div>`;
+            else for (const a of catAccount) html += `<div class="alert-item"><div class="alert-title">Spike detected</div><div class="alert-detail">Login at ${a.login_time} — ${a.count} accesses (threshold: ${a.threshold})</div></div>`;
+            html += `</div></div>`;
             return html;
         }
-        
-        function renderRareEvents(data) {
-            if (data.error) return '<p style="color:red;">Error: ' + data.error + '</p>';
-            
-            var badgeClass = data.profile === 'stable' ? 'badge-stable' : 'badge-instable';
-            var profileText = data.profile === 'stable' ? 'Stable (x2)' : 'Instable (x3)';
-            
-            var html = '<div class="section"><h3>Phase 2 - Real-time Anomaly Detection (Sliding Windows)</h3>';
-            html += '<p><span class="badge ' + badgeClass + '">' + profileText + '</span> (multiplier x' + data.multiplier + ')</p>';
-            
-            // Ransomware alerts
-            html += '<h4>🚨 Ransomware (file_written / 1 min)</h4>';
-            if (data.anomalies.ransomware.length === 0) {
-                html += '<p class="alert">No ransomware anomalies detected</p>';
-            } else {
-                for (var i = 0; i < data.anomalies.ransomware.length; i++) {
-                    var a = data.anomalies.ransomware[i];
-                    html += '<div class="alert"><strong>' + a.time + '</strong> - ' + a.count + ' file_written (threshold: ' + a.threshold + ', x' + a.multiplier + ')</div>';
-                }
+
+        function renderTable(d) {
+            if (d.error || !d.results) return '<div class="empty-message">No data available</div>';
+            const flagged = d.results.filter(r => r.anomaly_score > 0);
+            if (flagged.length === 0) return '<div class="empty-message">No anomalies detected</div>';
+            let html = `<div class="table-wrapper"><table class="data-table"><thead><tr><th>Date</th><th>Score</th><th>Type</th><th>Confidence</th><th>Contributors</th></tr></thead><tbody>`;
+            for (const r of flagged) {
+                html += `<tr>
+                    <td style="white-space:nowrap">${r.date}</td>
+                    <td>${r.anomaly_score.toFixed(2)}</td>
+                    <td><span class="badge ${attackClass(r.attack_type)}">${r.attack_type}</span></td>
+                    <td><span class="${r.confidence === 'HIGH' ? 'confidence-high' : 'confidence-medium'}">${r.confidence}</span></td>
+                    <td style="font-size:0.7rem;">${r.top_contributors.substring(0,70)}${r.top_contributors.length > 70 ? '…' : ''}</td>
+                </tr>`;
             }
-            
-            // Mass deletion alerts
-            html += '<h4>🗑️ Mass Deletion (file_deleted / 5 min)</h4>';
-            if (data.anomalies.mass_deletion.length === 0) {
-                html += '<p>No mass deletion anomalies detected</p>';
-            } else {
-                for (var i = 0; i < data.anomalies.mass_deletion.length; i++) {
-                    var a = data.anomalies.mass_deletion[i];
-                    html += '<div class="alert"><strong>' + a.time + '</strong> - ' + a.count + ' file_deleted (threshold: ' + a.threshold + ', x' + a.multiplier + ')</div>';
-                }
-            }
-            
-            // Malicious upload alerts
-            html += '<h4>📤 Malicious Upload (file_created / 5 min)</h4>';
-            if (data.anomalies.malicious_upload.length === 0) {
-                html += '<p>No malicious upload anomalies detected</p>';
-            } else {
-                for (var i = 0; i < data.anomalies.malicious_upload.length; i++) {
-                    var a = data.anomalies.malicious_upload[i];
-                    html += '<div class="alert"><strong>' + a.time + '</strong> - ' + a.count + ' file_created (threshold: ' + a.threshold + ', x' + a.multiplier + ')</div>';
-                }
-            }
-            
-            // Account takeover alerts
-            html += '<h4>🔐 Account Takeover (file_accessed after login / 1 min)</h4>';
-            if (data.anomalies.account_takeover.length === 0) {
-                html += '<p>No account takeover anomalies detected</p>';
-            } else {
-                for (var i = 0; i < data.anomalies.account_takeover.length; i++) {
-                    var a = data.anomalies.account_takeover[i];
-                    html += '<div class="alert"><strong>After login at ' + a.login_time + '</strong> - ' + a.count + ' file_accessed (threshold: ' + a.threshold + ', x' + a.multiplier + ')</div>';
-                }
-            }
-            
-            
-            
+            html += `</tbody></table></div>`;
             return html;
         }
-        
+
+        function renderThresholds(rd) {
+            if (rd.error) return '';
+            const mult = rd.multiplier;
+            return `<div class="card"><div class="card-title">Historical thresholds (×${mult})</div>
+                <div class="table-wrapper"><table class="data-table"><tbody>
+                    <tr><td style="font-weight:600;">Ransomware</td><td>Max: ${rd.thresholds.ransomware}</td><td><strong>Threshold: ${rd.thresholds.ransomware * mult}</strong></td></tr>
+                    <tr><td style="font-weight:600;">Mass deletion</td><td>Max: ${rd.thresholds.mass_deletion}</td><td><strong>Threshold: ${rd.thresholds.mass_deletion * mult}</strong></td></tr>
+                    <tr><td style="font-weight:600;">Malicious upload</td><td>Max: ${rd.thresholds.malicious_upload}</td><td><strong>Threshold: ${rd.thresholds.malicious_upload * mult}</strong></td></tr>
+                    <tr><td style="font-weight:600;">Account takeover</td><td>Max: ${rd.thresholds.account_takeover}</td><td><strong>Threshold: ${rd.thresholds.account_takeover * mult}</strong></td></tr>
+                </tbody></table></div></div>`;
+        }
+
         async function loadData(user) {
-            var statsDiv = document.getElementById(user + '-stats');
-            var tableDiv = document.getElementById(user + '-table');
-            var rareDiv = document.getElementById(user + '-rare');
-            
-            statsDiv.innerHTML = '<div class="loading">Loading...</div>';
+            const statsDiv = document.getElementById(`${user}-stats`);
+            const alertsDiv = document.getElementById(`${user}-alerts`);
+            const tableDiv = document.getElementById(`${user}-table`);
+            const threshDiv = document.getElementById(`${user}-thresholds`);
+            if (!statsDiv) return;
+
+            statsDiv.innerHTML = '<div class="empty-message">Loading…</div>';
+            alertsDiv.innerHTML = '';
             tableDiv.innerHTML = '';
-            rareDiv.innerHTML = '';
-            
+            threshDiv.innerHTML = '';
+
             try {
-                var response = await fetch('/admin/detection/' + user, { headers: { 'Authorization': 'Bearer ' + token } });
-                var data = await response.json();
+                const resp = await fetch(`/admin/detection/${user}`, { headers: { 'Authorization': 'Bearer ' + token } });
+                if (resp.status === 401) throw new Error();
+                const data = await resp.json();
                 statsDiv.innerHTML = renderStats(data);
                 tableDiv.innerHTML = renderTable(data);
-            } catch(e) { statsDiv.innerHTML = '<p style="color:red;">Error loading data</p>'; }
-            
+            } catch(e) { statsDiv.innerHTML = '<div class="empty-message">Error loading data</div>'; }
+
             try {
-                var rareResponse = await fetch('/admin/detection/rare/' + user, { headers: { 'Authorization': 'Bearer ' + token } });
-                var rareData = await rareResponse.json();
-                rareDiv.innerHTML = renderRareEvents(rareData);
-            } catch(e) { rareDiv.innerHTML = '<p style="color:red;">Error loading rare events</p>'; }
+                const rareResp = await fetch(`/admin/detection/rare/${user}`, { headers: { 'Authorization': 'Bearer ' + token } });
+                if (rareResp.status === 401) throw new Error();
+                const rareData = await rareResp.json();
+                alertsDiv.innerHTML = renderAlerts(rareData);
+                threshDiv.innerHTML = renderThresholds(rareData);
+            } catch(e) { alertsDiv.innerHTML = '<div class="empty-message">Error loading real-time data</div>'; }
+
+            const statusSpan = document.getElementById('refreshStatus');
+            if (statusSpan) statusSpan.innerText = `Last update: ${new Date().toLocaleTimeString()} · auto 30s`;
         }
-        
-        function showTab(tab) {
-            var btns = document.querySelectorAll('.tab-btn');
-            for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
-            var contents = document.querySelectorAll('.tab-content');
-            for (var i = 0; i < contents.length; i++) contents[i].classList.remove('active');
-            var activeBtn = document.querySelector('.tab-btn[onclick="showTab(\'' + tab + '\')"]');
-            if (activeBtn) activeBtn.classList.add('active');
-            document.getElementById(tab + '-tab').classList.add('active');
-            loadData(tab);
+
+        function startAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(() => { if (currentUser) loadData(currentUser); }, 30000);
+            const btn = document.getElementById('refreshToggleBtn');
+            if (btn) btn.innerText = 'Pause';
         }
-        
-        loadData('alice');
+
+        function stopAutoRefresh() {
+            if (refreshInterval) { clearInterval(refreshInterval); refreshInterval = null; }
+            const btn = document.getElementById('refreshToggleBtn');
+            if (btn) btn.innerText = 'Resume';
+        }
+
+        function toggleAutoRefresh() { refreshInterval ? stopAutoRefresh() : startAutoRefresh(); }
+
+        function switchTab(user) {
+            currentUser = user;
+            document.getElementById('alice-tab').style.display = user === 'alice' ? 'block' : 'none';
+            document.getElementById('bob-tab').style.display = user === 'bob' ? 'block' : 'none';
+            document.querySelectorAll('.tab').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.tab[data-tab="${user}"]`).classList.add('active');
+            loadData(user);
+        }
+
+        function init() {
+            document.querySelectorAll('.tab').forEach(btn => {
+                btn.addEventListener('click', () => { const u = btn.getAttribute('data-tab'); if (u) switchTab(u); });
+            });
+            const toggleBtn = document.getElementById('refreshToggleBtn');
+            if (toggleBtn) toggleBtn.addEventListener('click', toggleAutoRefresh);
+            startAutoRefresh();
+            loadData('alice');
+        }
+
+        async function logout() {
+            await fetch('/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
+            localStorage.clear();
+            window.location.href = '/login-page';
+        }
+        window.logout = logout;
+
+        init();
     </script>
 </body>
 </html>

@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - UEBA Cloud Storage</title>
+    <title>UEBA · Cloud Storage</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,176 +13,234 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f0f4f8;
-            color: #1a2a3a;
+            background: #eef2f7;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #0a1c2a;
+            line-height: 1.45;
+            -webkit-font-smoothing: antialiased;
         }
 
+        /* Header */
         .header {
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 0 24px;
+            background: #ffffff;
+            border-bottom: 2px solid #dce5ec;
             position: sticky;
             top: 0;
             z-index: 100;
         }
 
         .header-content {
-            max-width: 1400px;
+            max-width: 1280px;
             margin: 0 auto;
+            padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 0;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
-        .logo h2 {
-            color: #2c7da0;
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #1a5a7a, #2c7da0);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .logo-icon span {
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .logo-text .primary {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #1a5a7a;
+            letter-spacing: -0.3px;
+        }
+
+        .logo-text .secondary {
+            font-size: 0.6rem;
             font-weight: 600;
+            color: #8aaec2;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
 
         .user-info {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 0.75rem;
+            background: #f0f4f8;
+            padding: 0.3rem 0.3rem 0.3rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid #dce5ec;
         }
 
         .user-name {
-            color: #1a3a5c;
-            font-weight: 500;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #1a5a7a;
         }
 
         .btn-logout {
-            padding: 6px 16px;
-            background: #e2e8f0;
-            color: #1a3a5c;
+            background: #e2edf2;
             border: none;
-            border-radius: 6px;
+            border-radius: 2rem;
+            padding: 0.45rem 1.3rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1a5a7a;
             cursor: pointer;
-            font-size: 14px;
             transition: all 0.2s;
         }
 
         .btn-logout:hover {
-            background: #cbd5e0;
+            background: #d0e0e8;
+            transform: translateY(-1px);
         }
 
         .container {
-            max-width: 1400px;
-            margin: 24px auto;
-            padding: 0 24px;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem;
         }
 
-        .upload-card {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 32px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-            border: 1px solid #e2e8f0;
+        /* Cards */
+        .card {
+            background: #ffffff;
+            border: 1px solid #dce5ec;
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
         }
 
-        .upload-card h3 {
-            color: #1a3a5c;
-            margin-bottom: 16px;
-            font-size: 18px;
+        .card-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #8aaec2;
+            margin-bottom: 1.25rem;
         }
 
         .upload-area {
             display: flex;
-            gap: 16px;
+            gap: 1rem;
             align-items: center;
             flex-wrap: wrap;
         }
 
         input[type="file"] {
             flex: 1;
-            padding: 8px;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            background: #f8fafc;
+            padding: 0.75rem 1rem;
+            border: 1px solid #dce5ec;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            background: #ffffff;
+            font-family: 'Inter', sans-serif;
         }
 
         .btn-primary {
-            padding: 8px 20px;
-            background: #2c7da0;
+            background: #1a5a7a;
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 2rem;
+            padding: 0.7rem 1.8rem;
+            font-size: 0.8rem;
+            font-weight: 600;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
             transition: all 0.2s;
         }
 
         .btn-primary:hover {
-            background: #1f5e7a;
+            background: #2c7da0;
+            transform: translateY(-1px);
         }
 
+        /* Tabs */
         .tabs {
             display: flex;
-            gap: 12px;
-            margin-bottom: 24px;
-            border-bottom: 2px solid #e2e8f0;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #dce5ec;
+            padding-bottom: 0.5rem;
         }
 
         .tab {
-            padding: 12px 24px;
             background: none;
             border: none;
+            padding: 0.5rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #8aaec2;
             cursor: pointer;
-            font-size: 15px;
-            font-weight: 500;
-            color: #6c86a0;
+            border-radius: 2rem;
             transition: all 0.2s;
         }
 
         .tab:hover {
-            color: #2c7da0;
+            color: #1a5a7a;
+            background: #f0f6fa;
         }
 
         .tab.active {
-            color: #2c7da0;
-            border-bottom: 2px solid #2c7da0;
-            margin-bottom: -2px;
+            color: #1a5a7a;
+            background: #f0f6fa;
         }
 
+        /* File list */
         .file-list {
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            overflow: hidden;
+            background: #ffffff;
+            border: 1px solid #dce5ec;
+            border-radius: 1.25rem;
+            overflow-x: auto;
         }
 
         .file-header {
             display: grid;
-            grid-template-columns: 3fr 1fr 2fr;
+            grid-template-columns: minmax(200px, 3fr) minmax(80px, 1fr) minmax(420px, 2.5fr);
             background: #f8fafc;
-            padding: 12px 20px;
-            font-weight: 600;
-            color: #1a3a5c;
-            font-size: 13px;
-            border-bottom: 1px solid #e2e8f0;
+            padding: 0.9rem 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #5e7e96;
+            border-bottom: 1px solid #dce5ec;
+            gap: 1rem;
         }
 
         .file-item {
             display: grid;
-            grid-template-columns: 3fr 1fr 2fr;
-            padding: 12px 20px;
+            grid-template-columns: minmax(200px, 3fr) minmax(80px, 1fr) minmax(420px, 2.5fr);
+            padding: 0.9rem 1.5rem;
             align-items: center;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid #eef2f7;
             transition: background 0.2s;
+            gap: 1rem;
         }
 
         .file-item:hover {
-            background: #f8fafc;
+            background: #fafcfd;
         }
 
         .file-name {
-            color: #2c7da0;
+            color: #1a5a7a;
             cursor: pointer;
-            font-weight: 500;
-            font-size: 14px;
+            font-weight: 600;
+            font-size: 0.9rem;
             word-break: break-word;
         }
 
@@ -190,115 +249,100 @@
         }
 
         .file-size {
-            color: #6c86a0;
-            font-size: 13px;
+            font-size: 0.8rem;
+            color: #8aaec2;
+            font-weight: 500;
         }
 
         .file-actions {
             display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
+            gap: 0.5rem;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-bottom: 0.2rem;
         }
 
         .btn-action {
-            padding: 4px 12px;
+            padding: 0.35rem 0.9rem;
             border: none;
-            border-radius: 4px;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            font-weight: 600;
             cursor: pointer;
-            font-size: 12px;
-            font-weight: 500;
             transition: all 0.2s;
+            white-space: nowrap;
         }
 
-        .btn-view {
-            background: #e8f4f8;
-            color: #2c7da0;
-        }
-        .btn-view:hover { background: #d0e7f0; }
+        .btn-view { background: #e8f0f5; color: #1a5a7a; }
+        .btn-edit { background: #fef3e0; color: #c9771e; }
+        .btn-download { background: #e0f0ea; color: #2a7a5c; }
+        .btn-share { background: #e3edf8; color: #2a6d9c; }
+        .btn-rename { background: #efe5f8; color: #6b3d8c; }
+        .btn-delete { background: #fee6e3; color: #b33c2a; }
+        .btn-restore { background: #e8f0f5; color: #1a5a7a; }
 
-        .btn-edit {
-            background: #fef3e8;
-            color: #e67e22;
-        }
-        .btn-edit:hover { background: #fde6d5; }
-
-        .btn-download {
-            background: #e8f8f5;
-            color: #1e8449;
-        }
-        .btn-download:hover { background: #d0f0ea; }
-
-        .btn-share {
-            background: #ebf5ff;
-            color: #2980b9;
-        }
-        .btn-share:hover { background: #d6e9ff; }
-
-        .btn-rename {
-            background: #f3e5f5;
-            color: #7b1fa2;
-        }
-        .btn-rename:hover { background: #e1bee7; }
-
-        .btn-delete {
-            background: #fee;
-            color: #c0392b;
-        }
-        .btn-delete:hover { background: #fdd; }
-
-        .btn-restore {
-            background: #e8f4f8;
-            color: #2c7da0;
+        .btn-action:hover {
+            transform: translateY(-1px);
+            filter: brightness(0.96);
         }
 
         .empty-state {
             text-align: center;
-            padding: 48px;
-            color: #6c86a0;
+            padding: 3rem;
+            font-size: 0.85rem;
+            color: #a9c0cf;
+            font-weight: 500;
         }
 
         .rename-input {
-            padding: 4px 8px;
-            border: 1px solid #2c7da0;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-right: 4px;
+            padding: 0.35rem 0.8rem;
+            border: 1.5px solid #1a5a7a;
+            border-radius: 1.5rem;
+            font-size: 0.75rem;
+            margin-right: 0.3rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
         }
 
         .rename-confirm {
-            background: #2c7da0;
+            background: #1a5a7a;
             color: white;
-            padding: 4px 12px;
+            padding: 0.35rem 0.9rem;
             border: none;
-            border-radius: 4px;
+            border-radius: 1.5rem;
+            font-size: 0.7rem;
+            font-weight: 600;
             cursor: pointer;
-            font-size: 11px;
         }
 
         .rename-cancel {
-            background: #e2e8f0;
-            color: #1a3a5c;
-            padding: 4px 12px;
-            border: none;
-            border-radius: 4px;
+            background: #eef3f7;
+            color: #1a5a7a;
+            padding: 0.35rem 0.9rem;
+            border: 1px solid #dce5ec;
+            border-radius: 1.5rem;
+            font-size: 0.7rem;
+            font-weight: 600;
             cursor: pointer;
-            font-size: 11px;
+        }
+
+        @media (max-width: 900px) {
+            .file-header, .file-item {
+                grid-template-columns: minmax(180px, 2fr) minmax(70px, 0.8fr) minmax(320px, 2fr);
+            }
         }
 
         @media (max-width: 768px) {
+            .container { padding: 1rem; }
             .file-header, .file-item {
                 grid-template-columns: 1fr;
-                gap: 8px;
+                gap: 0.6rem;
             }
             .file-actions {
-                justify-content: flex-start;
+                flex-wrap: wrap;
             }
-            .upload-area {
-                flex-direction: column;
-            }
-            input[type="file"] {
-                width: 100%;
-            }
+            .upload-area { flex-direction: column; }
+            input[type="file"] { width: 100%; }
         }
     </style>
 </head>
@@ -306,44 +350,48 @@
     <div class="header">
         <div class="header-content">
             <div class="logo">
-                <h2>UEBA Cloud Storage</h2>
+                <div class="logo-icon"><span>☁</span></div>
+                <div class="logo-text">
+                    <div class="primary">UEBA</div>
+                    <div class="secondary">cloud storage</div>
+                </div>
             </div>
             <div class="user-info">
                 <span class="user-name" id="username"></span>
-                <button class="btn-logout" onclick="logout()">Sign Out</button>
+                <button class="btn-logout" onclick="logout()">Sign out</button>
             </div>
         </div>
     </div>
-    
+
     <div class="container">
-        <div class="upload-card">
-            <h3>Upload Files</h3>
+        <div class="card">
+            <div class="card-title">Upload files</div>
             <div class="upload-area">
                 <input type="file" id="fileInput" multiple>
                 <button class="btn-primary" onclick="uploadFiles()">Upload</button>
             </div>
         </div>
-        
+
         <div class="tabs">
-            <button class="tab active" onclick="showTab('files')">My Files</button>
-            <button class="tab" onclick="showTab('trash')">Trash Bin</button>
+            <button class="tab active" onclick="showTab('files')">My files</button>
+            <button class="tab" onclick="showTab('trash')">Trash</button>
         </div>
-        
+
         <div id="files-tab">
             <div class="file-list">
                 <div class="file-header">
-                    <span>File Name</span>
+                    <span>File name</span>
                     <span>Size</span>
                     <span>Actions</span>
                 </div>
                 <div id="files-container"></div>
             </div>
         </div>
-        
+
         <div id="trash-tab" style="display:none;">
             <div class="file-list">
                 <div class="file-header">
-                    <span>File Name</span>
+                    <span>File name</span>
                     <span>Size</span>
                     <span>Actions</span>
                 </div>
@@ -354,310 +402,142 @@
 
     <script>
         const token = localStorage.getItem('token');
-        if (!token) {
-            window.location.href = '/login-page';
-        }
-
+        if (!token) window.location.href = '/login-page';
         document.getElementById('username').innerText = localStorage.getItem('user') || 'User';
 
         async function apiCall(url, options = {}) {
-            const response = await fetch(url, {
+            const r = await fetch(url, {
                 ...options,
-                headers: {
-                    ...options.headers,
-                    'Authorization': 'Bearer ' + token
-                }
+                headers: { ...options.headers, 'Authorization': 'Bearer ' + token }
             });
-            if (response.status === 401 || response.status === 403) {
+            if (r.status === 401 || r.status === 403) {
                 localStorage.removeItem('token');
                 window.location.href = '/login-page';
                 throw new Error('Unauthorized');
             }
-            return response;
+            return r;
         }
 
         async function loadFiles() {
             try {
-                const response = await apiCall('/files/list');
-                const files = await response.json();
-                
+                const r = await apiCall('/files/list');
+                const files = await r.json();
                 const container = document.getElementById('files-container');
-                
-                if (files.length === 0) {
-                    container.innerHTML = '<div class="empty-state">No files uploaded yet</div>';
-                    return;
-                }
-                
-                container.innerHTML = files.map(file => `
-                    <div class="file-item" id="file-item-${escapeHtml(file.name)}">
-                        <div class="file-name" onclick="viewFile('${escapeHtml(file.name)}')">📄 ${escapeHtml(file.name)}</div>
-                        <div class="file-size">${formatFileSize(file.size)}</div>
-                        <div class="file-actions" id="actions-${escapeHtml(file.name)}">
-                            <button class="btn-action btn-view" onclick="viewFile('${escapeHtml(file.name)}')">View</button>
-                            <button class="btn-action btn-edit" onclick="editFile('${escapeHtml(file.name)}')">Edit</button>
-                            <button class="btn-action btn-download" onclick="downloadFile('${escapeHtml(file.name)}')">Download</button>
-                            <button class="btn-action btn-rename" onclick="showRenameInput('${escapeHtml(file.name)}')">Rename</button>
-                            <button class="btn-action btn-share" onclick="shareFile('${escapeHtml(file.name)}')">Share</button>
-                            <button class="btn-action btn-delete" onclick="deleteFile('${escapeHtml(file.name)}', false)">Delete</button>
+                if (files.length === 0) { container.innerHTML = '<div class="empty-state">No files uploaded yet</div>'; return; }
+                container.innerHTML = files.map(f => `
+                    <div class="file-item" id="file-item-${escapeHtml(f.name)}">
+                        <div class="file-name" onclick="viewFile('${escapeHtml(f.name)}')">${escapeHtml(f.name)}</div>
+                        <div class="file-size">${formatFileSize(f.size)}</div>
+                        <div class="file-actions" id="actions-${escapeHtml(f.name)}">
+                            <button class="btn-action btn-view" onclick="viewFile('${escapeHtml(f.name)}')">View</button>
+                            <button class="btn-action btn-edit" onclick="editFile('${escapeHtml(f.name)}')">Edit</button>
+                            <button class="btn-action btn-download" onclick="downloadFile('${escapeHtml(f.name)}')">Download</button>
+                            <button class="btn-action btn-rename" onclick="showRenameInput('${escapeHtml(f.name)}')">Rename</button>
+                            <button class="btn-action btn-share" onclick="shareFile('${escapeHtml(f.name)}')">Share</button>
+                            <button class="btn-action btn-delete" onclick="deleteFile('${escapeHtml(f.name)}', false)">Delete</button>
                         </div>
                     </div>
                 `).join('');
-            } catch (error) {
-                console.error('Error loading files:', error);
-            }
+            } catch(e) { console.error(e); }
         }
 
-        async function downloadFile(filename) {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`/files/download/${encodeURIComponent(filename)}`, {
-        headers: { 'Authorization': 'Bearer ' + token }
-    });
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-        function showRenameInput(filename) {
-            const actionsDiv = document.getElementById(`actions-${filename}`);
-            
-            actionsDiv.innerHTML = `
-                <input type="text" id="rename-input-${filename}" class="rename-input" value="${filename}" autocomplete="off">
-                <button class="rename-confirm" onclick="renameFile('${filename}')">Save</button>
-                <button class="rename-cancel" onclick="cancelRename('${filename}')">Cancel</button>
-            `;
-            
-            const input = document.getElementById(`rename-input-${filename}`);
-            input.focus();
-            input.select();
-            
-            input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    renameFile(filename);
-                }
-            });
+        async function downloadFile(f) {
+            const r = await apiCall(`/files/download/${encodeURIComponent(f)}`);
+            const blob = await r.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = f;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
 
-        async function cancelRename(filename) {
-            await loadFiles();
+        function showRenameInput(f) {
+            const div = document.getElementById(`actions-${f}`);
+            div.innerHTML = `<input type="text" id="rename-input-${f}" class="rename-input" value="${f}">
+                <button class="rename-confirm" onclick="renameFile('${f}')">Save</button>
+                <button class="rename-cancel" onclick="cancelRename('${f}')">Cancel</button>`;
+            document.getElementById(`rename-input-${f}`).focus();
         }
-
-        async function renameFile(oldFilename) {
-            const newFilename = document.getElementById(`rename-input-${oldFilename}`).value;
-            
-            if (!newFilename || newFilename === oldFilename) {
-                await loadFiles();
-                return;
-            }
-            
+        async function cancelRename(f) { await loadFiles(); }
+        async function renameFile(oldF) {
+            const newF = document.getElementById(`rename-input-${oldF}`).value;
+            if (!newF || newF === oldF) { await loadFiles(); return; }
             try {
-                const response = await apiCall(`/files/rename/${encodeURIComponent(oldFilename)}?new_filename=${encodeURIComponent(newFilename)}`, {
-                    method: 'PUT'
-                });
-                
-                if (response.ok) {
-                    await loadFiles();
-                    await loadTrash();
-                } else {
-                    const error = await response.json();
-                    alert('Error renaming file: ' + error.detail);
-                    await loadFiles();
-                }
-            } catch (error) {
-                console.error('Error renaming file:', error);
-                alert('Error renaming file');
-                await loadFiles();
-            }
+                const r = await apiCall(`/files/rename/${encodeURIComponent(oldF)}?new_filename=${encodeURIComponent(newF)}`, { method: 'PUT' });
+                if (r.ok) { await loadFiles(); await loadTrash(); }
+                else alert('Error renaming');
+            } catch(e) { alert('Error'); }
         }
 
         async function loadTrash() {
             try {
-                const response = await apiCall('/files/trash');
-                const files = await response.json();
-                
+                const r = await apiCall('/files/trash');
+                const files = await r.json();
                 const container = document.getElementById('trash-container');
-                
-                if (files.length === 0) {
-                    container.innerHTML = '<div class="empty-state">Trash bin is empty</div>';
-                    return;
-                }
-                
-                container.innerHTML = files.map(file => `
+                if (files.length === 0) { container.innerHTML = '<div class="empty-state">Trash bin is empty</div>'; return; }
+                container.innerHTML = files.map(f => `
                     <div class="file-item">
-                        <div class="file-name">🗑️ ${escapeHtml(file.name)}</div>
-                        <div class="file-size">${formatFileSize(file.size)}</div>
+                        <div class="file-name">${escapeHtml(f.name)}</div>
+                        <div class="file-size">${formatFileSize(f.size)}</div>
                         <div class="file-actions">
-                            <button class="btn-action btn-restore" onclick="restoreFile('${escapeHtml(file.name)}')">Restore</button>
-                            <button class="btn-action btn-delete" onclick="deleteFile('${escapeHtml(file.name)}', true)">Delete Permanently</button>
+                            <button class="btn-action btn-restore" onclick="restoreFile('${escapeHtml(f.name)}')">Restore</button>
+                            <button class="btn-action btn-delete" onclick="deleteFile('${escapeHtml(f.name)}', true)">Delete</button>
                         </div>
                     </div>
                 `).join('');
-            } catch (error) {
-                console.error('Error loading trash:', error);
-            }
+            } catch(e) { console.error(e); }
         }
 
         async function uploadFiles() {
             const files = document.getElementById('fileInput').files;
-            if (files.length === 0) {
-                alert('Please select files to upload');
-                return;
-            }
-            
+            if (!files.length) { alert('Select files'); return; }
             for (let file of files) {
-                const formData = new FormData();
-                formData.append('file', file);
-                
-                await apiCall('/files/upload', {
-                    method: 'POST',
-                    body: formData
-                });
+                const fd = new FormData(); fd.append('file', file);
+                await apiCall('/files/upload', { method: 'POST', body: fd });
             }
-            
-            alert(`${files.length} file(s) uploaded successfully`);
-            document.getElementById('fileInput').value = '';
-            loadFiles();
+            alert('Uploaded'); document.getElementById('fileInput').value = ''; loadFiles();
         }
 
-        function viewFile(filename) {
-            const extension = filename.split('.').pop().toLowerCase();
-            
-            if (extension === 'pdf') {
-                downloadFile(filename);
-            } else {
-                window.location.href = `/editor/${filename}`;
-            }
-        }
-
-        function editFile(filename) {
-            const extension = filename.split('.').pop().toLowerCase();
-            
-            if (extension === 'pdf') {
-                downloadFile(filename);
-                
-                setTimeout(() => {
-                    if (confirm('After editing the PDF, upload the new version?')) {
-                        const input = document.createElement('input');
-                        input.type = 'file';
-                        input.accept = '.pdf';
-                        input.onchange = async (e) => {
-                            const file = e.target.files[0];
-                            if (file) {
-                                const formData = new FormData();
-                                formData.append('file', file);
-                                
-                                await apiCall(`/files/${filename}?permanent=true`, {
-                                    method: 'DELETE'
-                                });
-                                
-                                await apiCall('/files/upload', {
-                                    method: 'POST',
-                                    body: formData
-                                });
-                                
-                                alert('PDF updated!');
-                                location.reload();
-                            }
-                        };
-                        input.click();
-                    }
-                }, 2000);
-            } else {
-                window.location.href = `/editor/${filename}`;
-            }
-        }
-
-        async function shareFile(filename) {
+        function viewFile(f) { (f.split('.').pop().toLowerCase() === 'pdf') ? downloadFile(f) : window.location.href = `/editor/${f}`; }
+        function editFile(f) { (f.split('.').pop().toLowerCase() === 'pdf') ? downloadFile(f) : window.location.href = `/editor/${f}`; }
+        async function shareFile(f) {
             try {
-                const response = await apiCall(`/files/${filename}/share`, {
-                    method: 'POST'
-                });
-                const data = await response.json();
-                const shareUrl = `${window.location.origin}${data.share_link}`;
-                prompt('Share this link:', shareUrl);
-            } catch (error) {
-                console.error('Error sharing file:', error);
-                alert('Error creating share link');
-            }
+                const r = await apiCall(`/files/${f}/share`, { method: 'POST' });
+                const d = await r.json();
+                prompt('Share link:', window.location.origin + d.share_link);
+            } catch(e) { alert('Error'); }
         }
-
-        async function deleteFile(filename, permanent) {
-            const action = permanent ? 'delete permanently' : 'move to trash';
-            if (!confirm(`Are you sure you want to ${action} "${filename}"?`)) return;
-            
-            const response = await apiCall(`/files/${filename}?permanent=${permanent}`, {
-                method: 'DELETE'
-            });
-            
-            if (response.ok) {
-                loadFiles();
-                loadTrash();
-            } else {
-                alert('Error deleting file');
-            }
+        async function deleteFile(f, perm) {
+            if (!confirm(`Delete ${f}?`)) return;
+            await apiCall(`/files/${f}?permanent=${perm}`, { method: 'DELETE' });
+            loadFiles(); loadTrash();
         }
-
-        async function restoreFile(filename) {
-            const response = await apiCall(`/files/${filename}/restore`, {
-                method: 'POST'
-            });
-            
-            if (response.ok) {
-                loadFiles();
-                loadTrash();
-            } else {
-                alert('Error restoring file');
-            }
+        async function restoreFile(f) {
+            await apiCall(`/files/${f}/restore`, { method: 'POST' });
+            loadFiles(); loadTrash();
         }
 
         function showTab(tab) {
-            const filesTab = document.getElementById('files-tab');
-            const trashTab = document.getElementById('trash-tab');
-            const tabs = document.querySelectorAll('.tab');
-            
-            if (tab === 'files') {
-                filesTab.style.display = 'block';
-                trashTab.style.display = 'none';
-                tabs[0].classList.add('active');
-                tabs[1].classList.remove('active');
-                loadFiles();
-            } else {
-                filesTab.style.display = 'none';
-                trashTab.style.display = 'block';
-                tabs[0].classList.remove('active');
-                tabs[1].classList.add('active');
-                loadTrash();
-            }
+            document.getElementById('files-tab').style.display = tab === 'files' ? 'block' : 'none';
+            document.getElementById('trash-tab').style.display = tab === 'trash' ? 'block' : 'none';
+            document.querySelectorAll('.tab').forEach((btn, i) => {
+                if (i === 0) tab === 'files' ? btn.classList.add('active') : btn.classList.remove('active');
+                else tab === 'trash' ? btn.classList.add('active') : btn.classList.remove('active');
+            });
+            loadFiles(); if (tab === 'trash') loadTrash();
         }
 
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        function formatFileSize(b) {
+            if (b === 0) return '0 Bytes';
+            const k = 1024, sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(b) / Math.log(k));
+            return parseFloat((b / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
+        function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
         async function logout() {
-            await apiCall('/logout', { method: 'POST' })
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            localStorage.removeItem('uid');
-            localStorage.removeItem('role');
+            await apiCall('/logout', { method: 'POST' });
+            localStorage.clear();
             window.location.href = '/login-page';
         }
-
         loadFiles();
     </script>
 </body>
