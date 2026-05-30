@@ -2,6 +2,7 @@ import json
 from datetime import datetime, timezone
 from models.database import get_db
 import os
+from services.realtime_detection import RealtimeDetection
 
 def write_log(event_type: str, uid: str, uid_type: str, params: dict,
               is_local_ip: bool = True, role: str = None, location: dict = None):
@@ -40,9 +41,27 @@ def write_log(event_type: str, uid: str, uid_type: str, params: dict,
         cur.close()
         conn.close()
         
+        # ============================================
+        # REAL-TIME DETECTION TRIGGER
+        # ============================================
+        # Trigger real-time detection on every log write
+        event_time = log_entry['time']
+        
+        # Check sliding window events (ransomware, mass deletion, malicious upload)
+        if event_type in ['file_written', 'file_deleted', 'file_created']:
+            RealtimeDetection.check_event(uid, event_type, event_time)
+        
+        # Track logins for account takeover detection
+        if event_type == 'login_successful':
+            RealtimeDetection.on_login_success(uid, event_time)
+        
+        # Check access after login for account takeover
+        if event_type == 'file_accessed':
+            RealtimeDetection.check_access_after_login(uid, event_time)
+        
         # Convertir datetime en ISO
         log_json = {
-            "id": log_id,  # ← id en premier
+            "id": log_id,
             "time": log_entry['time'].isoformat().replace('+00:00', 'Z'),
             "uid": log_entry['uid'],
             "uid_type": log_entry['uid_type'],
@@ -56,5 +75,6 @@ def write_log(event_type: str, uid: str, uid_type: str, params: dict,
         os.makedirs("/app/logs", exist_ok=True)
         with open("/app/logs/logs.json", "a") as f:
             f.write(json.dumps(log_json) + "\n")
+            
     except Exception as e:
         print(f"Erreur log: {e}")

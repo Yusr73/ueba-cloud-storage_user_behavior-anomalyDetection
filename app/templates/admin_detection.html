@@ -7,12 +7,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
             background: #eef2f7;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             color: #0a1c2a;
             line-height: 1.45;
+            -webkit-font-smoothing: antialiased;
         }
+
         .header {
             background: #ffffff;
             border-bottom: 2px solid #dce5ec;
@@ -38,10 +41,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
         .logo-icon span { color: white; font-size: 1.3rem; font-weight: 700; }
-        .logo-text .primary { font-size: 1.4rem; font-weight: 800; color: #1a5a7a; }
-        .logo-text .secondary { font-size: 0.6rem; font-weight: 600; color: #8aaec2; text-transform: uppercase; }
+        .logo-text .primary { font-size: 1.4rem; font-weight: 800; color: #1a5a7a; letter-spacing: -0.3px; }
+        .logo-text .secondary { font-size: 0.6rem; font-weight: 600; color: #8aaec2; letter-spacing: 0.5px; text-transform: uppercase; }
+
         .user-info {
             display: flex;
             align-items: center;
@@ -61,8 +66,12 @@
             font-weight: 600;
             color: #1a5a7a;
             cursor: pointer;
+            transition: all 0.2s;
         }
+        .btn-logout:hover { background: #d0e0e8; transform: translateY(-1px); }
+
         .container { max-width: 1280px; margin: 0 auto; padding: 2rem; }
+
         .control-bar {
             background: #ffffff;
             border: 1px solid #dce5ec;
@@ -75,17 +84,12 @@
             flex-wrap: wrap;
             gap: 1rem;
         }
-        .btn-primary {
-            background: #1a5a7a;
-            border: none;
-            border-radius: 2rem;
-            padding: 0.4rem 1.2rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: white;
-            cursor: pointer;
+        .control-group {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
         }
-        .btn-primary:hover { background: #2c7da0; }
         .btn-outline {
             background: #f0f4f8;
             border: 1px solid #dce5ec;
@@ -95,8 +99,23 @@
             font-weight: 600;
             color: #1a5a7a;
             cursor: pointer;
+            transition: all 0.2s;
         }
-        .status-text { font-size: 0.75rem; color: #8aaec2; }
+        .btn-outline:hover { background: #e8eef3; transform: translateY(-1px); }
+        .btn-primary {
+            background: #1a5a7a;
+            border: none;
+            border-radius: 2rem;
+            padding: 0.4rem 1.2rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover { background: #2c7da0; transform: translateY(-1px); }
+        .status-text { font-size: 0.75rem; color: #8aaec2; font-weight: 500; }
+
         .tabs {
             display: flex;
             gap: 0.5rem;
@@ -113,8 +132,11 @@
             color: #8aaec2;
             cursor: pointer;
             border-radius: 2rem;
+            transition: all 0.2s;
         }
-        .tab:hover, .tab.active { color: #1a5a7a; background: #f0f6fa; }
+        .tab:hover { color: #1a5a7a; background: #f0f6fa; }
+        .tab.active { color: #1a5a7a; background: #f0f6fa; }
+
         .card {
             background: #ffffff;
             border: 1px solid #dce5ec;
@@ -134,13 +156,20 @@
             letter-spacing: 0.8px;
             color: #8aaec2;
         }
-        .card-title strong { color: #1a5a7a; }
-        .card-body { padding: 1.25rem 1.5rem; }
+        .card-title strong {
+            color: #1a5a7a;
+            font-weight: 800;
+        }
+        .card-body {
+            padding: 1.25rem 1.5rem;
+        }
+
         .stat-grid { display: flex; gap: 2rem; flex-wrap: wrap; }
         .stat-item { flex: 1; min-width: 120px; }
-        .stat-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; color: #8aaec2; margin-bottom: 0.25rem; }
+        .stat-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: #8aaec2; margin-bottom: 0.25rem; }
         .stat-number { font-size: 1.25rem; font-weight: 700; color: #1a5a7a; }
         .stat-number-small { font-size: 0.9rem; font-weight: 600; color: #1a5a7a; }
+
         .badge-group { display: flex; flex-wrap: wrap; gap: 0.3rem; }
         .table-wrapper { overflow-x: auto; }
         .data-table {
@@ -162,6 +191,7 @@
             color: #2c4e6e;
         }
         .data-table tr:hover td { background: #fafcfd; }
+
         .badge {
             display: inline-block;
             padding: 0.2rem 0.6rem;
@@ -178,15 +208,38 @@
         .badge-warning { background: #fef3e0; color: #c9771e; }
         .badge-info { background: #e2edfa; color: #2a6d9c; }
         .badge-isolation-only { background: #fef3e0; color: #c9771e; }
+        .badge-ransomware { background: #dc2626; color: white; }
+        .badge-account-takeover { background: #7c3aed; color: white; }
+        .badge-brute-force { background: #d97706; color: white; }
+        .badge-mass-deletion { background: #ea580c; color: white; }
+
         .confidence-high { background: #1a5a7a; color: white; padding: 0.2rem 0.6rem; border-radius: 2rem; font-size: 0.65rem; display: inline-block; }
         .confidence-medium { background: #e6a157; color: white; padding: 0.2rem 0.6rem; border-radius: 2rem; font-size: 0.65rem; display: inline-block; }
         .confidence-low { background: #b33c2a; color: white; padding: 0.2rem 0.6rem; border-radius: 2rem; font-size: 0.65rem; display: inline-block; }
+
+        .alert-item {
+            background: #fafcfd;
+            border-left: 3px solid #1a5a7a;
+            padding: 0.7rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.375rem;
+            border: 1px solid #eef2f7;
+        }
+        .alert-time { font-size: 0.65rem; color: #8aaec2; margin-bottom: 0.2rem; }
+        .alert-type { font-weight: 700; font-size: 0.75rem; color: #1a3a4a; margin-bottom: 0.2rem; }
+        .alert-detail { font-size: 0.7rem; color: #5e7e96; }
+
         .empty-message { text-align: center; padding: 2rem; color: #a9c0cf; font-size: 0.8rem; }
         .divider { height: 1px; background: #eef2f7; margin: 1rem 0; }
         .access-denied { text-align: center; padding: 2.5rem; background: white; border-radius: 1rem; border: 1px solid #dce5ec; }
+        .access-denied h1 { font-size: 1.2rem; color: #b33c2a; margin-bottom: 0.5rem; }
+
         @media (max-width: 768px) {
             .container { padding: 1rem; }
             .stat-grid { flex-direction: column; gap: 1rem; }
+            .control-bar { flex-direction: column; align-items: stretch; }
+            .control-group { justify-content: space-between; }
+            .card-body { padding: 1rem; }
         }
     </style>
 </head>
@@ -206,11 +259,13 @@
 
     <div class="container">
         <div class="control-bar">
-            <div>
+            <div class="control-group">
                 <button id="analyzeTodayBtn" class="btn-primary">Analyze Today</button>
                 <button id="refreshBtn" class="btn-outline">Refresh</button>
             </div>
-            <span id="statusText" class="status-text">Ready</span>
+            <div class="control-group">
+                <span id="statusText" class="status-text">Ready</span>
+            </div>
         </div>
 
         <div class="tabs">
@@ -219,32 +274,82 @@
         </div>
 
         <div id="alicePanel">
+            <!-- Real-Time Alerts Panel -->
             <div class="card">
-                <div class="card-header"><div class="card-title"><strong>Today</strong> · Cumulative</div></div>
-                <div class="card-body" id="todayAlice"><div class="empty-message">Loading...</div></div>
+                <div class="card-header">
+                    <div class="card-title"><strong>Real-Time</strong> · Sliding Window Alerts</div>
+                </div>
+                <div class="card-body" id="realtime-alice">
+                    <div class="empty-message">Loading...</div>
+                </div>
             </div>
+
+            <!-- Today Cumulative -->
             <div class="card">
-                <div class="card-header"><div class="card-title"><strong>Yesterday</strong> · Final</div></div>
-                <div class="card-body" id="yesterdayAlice"><div class="empty-message">Loading...</div></div>
+                <div class="card-header">
+                    <div class="card-title"><strong>Today</strong> · Cumulative Analysis</div>
+                </div>
+                <div class="card-body" id="today-alice">
+                    <div class="empty-message">Loading...</div>
+                </div>
             </div>
+
+            <!-- Yesterday -->
             <div class="card">
-                <div class="card-header"><div class="card-title"><strong>Historical</strong> · Previous Detections</div></div>
-                <div class="card-body" id="historicalAlice"><div class="empty-message">Loading...</div></div>
+                <div class="card-header">
+                    <div class="card-title"><strong>Yesterday</strong> · Final Analysis</div>
+                </div>
+                <div class="card-body" id="yesterday-alice">
+                    <div class="empty-message">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Historical Table -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><strong>Historical</strong> · Previous Detections</div>
+                </div>
+                <div class="card-body" id="historical-alice">
+                    <div class="empty-message">Loading...</div>
+                </div>
             </div>
         </div>
 
         <div id="bobPanel" style="display:none;">
             <div class="card">
-                <div class="card-header"><div class="card-title"><strong>Today</strong> · Cumulative</div></div>
-                <div class="card-body" id="todayBob"><div class="empty-message">Loading...</div></div>
+                <div class="card-header">
+                    <div class="card-title"><strong>Real-Time</strong> · Sliding Window Alerts</div>
+                </div>
+                <div class="card-body" id="realtime-bob">
+                    <div class="empty-message">Loading...</div>
+                </div>
             </div>
+
             <div class="card">
-                <div class="card-header"><div class="card-title"><strong>Yesterday</strong> · Final</div></div>
-                <div class="card-body" id="yesterdayBob"><div class="empty-message">Loading...</div></div>
+                <div class="card-header">
+                    <div class="card-title"><strong>Today</strong> · Cumulative Analysis</div>
+                </div>
+                <div class="card-body" id="today-bob">
+                    <div class="empty-message">Loading...</div>
+                </div>
             </div>
+
             <div class="card">
-                <div class="card-header"><div class="card-title"><strong>Historical</strong> · Previous Detections</div></div>
-                <div class="card-body" id="historicalBob"><div class="empty-message">Loading...</div></div>
+                <div class="card-header">
+                    <div class="card-title"><strong>Yesterday</strong> · Final Analysis</div>
+                </div>
+                <div class="card-body" id="yesterday-bob">
+                    <div class="empty-message">Loading...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><strong>Historical</strong> · Previous Detections</div>
+                </div>
+                <div class="card-body" id="historical-bob">
+                    <div class="empty-message">Loading...</div>
+                </div>
             </div>
         </div>
     </div>
@@ -268,14 +373,20 @@
         function getBadgeClass(t) {
             if (!t || t === 'NONE') return 'badge-unknown';
             if (t === 'DATA_THEFT') return 'badge-data-theft';
+            if (t === 'RANSOMWARE') return 'badge-ransomware';
+            if (t === 'RANSOMWARE_BEHAVIOR') return 'badge-ransomware';
+            if (t === 'ACCOUNT_TAKEOVER') return 'badge-account-takeover';
+            if (t === 'BRUTE_FORCE') return 'badge-brute-force';
             if (t === 'DIRECTORY_TRAVERSAL') return 'badge-directory';
             if (t === 'LOGIN_ACTIVITY') return 'badge-login';
             if (t === 'OFF_HOURS') return 'badge-off-hours';
             if (t === 'ISOLATION_ONLY') return 'badge-isolation-only';
-            if (t === 'BOT_OR_MASS_ACTIVITY') return 'badge-warning';
             if (t === 'MASS_ACTIVITY') return 'badge-warning';
-            if (t === 'DIVERSE_ACTIVITY') return 'badge-info';
-            if (t === 'PATH_REUSE_ANOMALY') return 'badge-info';
+            if (t === 'MASS_DELETION') return 'badge-mass-deletion';
+            if (t === 'file_written') return 'badge-ransomware';
+            if (t === 'file_deleted') return 'badge-mass-deletion';
+            if (t === 'file_created') return 'badge-warning';
+            if (t === 'account_takeover') return 'badge-account-takeover';
             return 'badge-unknown';
         }
 
@@ -294,25 +405,58 @@
             return r.json();
         }
 
-        async function loadPage() {
-            const statusSpan = document.getElementById('statusText');
-            statusSpan.innerText = 'Loading...';
-            
-            // Load today
-            const today = await apiCall(`/admin/detection/today/cumulative/${currentUser}`);
-            const todayDiv = document.getElementById(`today${currentUser.charAt(0).toUpperCase() + currentUser.slice(1)}`);
-            
-            if (today && today.has_data) {
+        // Load Real-Time Alerts
+        async function loadRealtime(displayName) {
+            try {
+                const alerts = await apiCall(`/admin/detection/realtime/alerts?user_id=${displayName}&hours=24`);
+                
+                if (!alerts || alerts.length === 0) {
+                    return `<div class="empty-message">No real-time alerts in the last 24 hours</div>`;
+                }
+                
+                let html = '';
+                for (const alert of alerts.slice(0, 15)) {
+                    let alertName = alert.event_type;
+                    let alertClass = getBadgeClass(alert.event_type);
+                    
+                    if (alert.event_type === 'file_written') alertName = 'Ransomware (writes per minute)';
+                    if (alert.event_type === 'file_deleted') alertName = 'Mass Deletion (deletes per 5 min)';
+                    if (alert.event_type === 'file_created') alertName = 'Malicious Upload (creates per 5 min)';
+                    if (alert.event_type === 'account_takeover') alertName = 'Account Takeover (accesses after login)';
+                    
+                    html += `
+                        <div class="alert-item">
+                            <div class="alert-time">${formatTime(alert.detected_at)}</div>
+                            <div class="alert-type"><span class="badge ${alertClass}">${alertName}</span></div>
+                            <div class="alert-detail">${alert.count_value} events · Threshold: ${alert.threshold_value} · Multiplier: ×${alert.multiplier}</div>
+                        </div>
+                    `;
+                }
+                return html;
+            } catch (error) {
+                console.error('Realtime error:', error);
+                return `<div class="empty-message">Error loading real-time alerts</div>`;
+            }
+        }
+
+        // Load Today Cumulative
+        async function loadToday(displayName) {
+            try {
+                const data = await apiCall(`/admin/detection/today/cumulative/${displayName}`);
+                
+                if (!data.has_data) {
+                    return `<div class="empty-message">No activity recorded today yet</div>`;
+                }
+                
                 let flaggedHtml = '';
-                if (today.flagged) {
-                    // Show all attack types
+                if (data.flagged) {
                     let allTypesHtml = '';
-                    if (today.all_attack_types && today.all_attack_types.length > 0) {
+                    if (data.all_attack_types && data.all_attack_types.length > 0) {
                         allTypesHtml = `
                             <div class="stat-item">
                                 <div class="stat-label">All Types</div>
                                 <div class="badge-group">
-                                    ${today.all_attack_types.map(t => `<span class="badge ${getBadgeClass(t)}">${t}</span>`).join('')}
+                                    ${data.all_attack_types.map(t => `<span class="badge ${getBadgeClass(t)}">${t}</span>`).join('')}
                                 </div>
                             </div>
                         `;
@@ -322,66 +466,79 @@
                         <div class="stat-grid" style="margin-top: 1rem;">
                             <div class="stat-item">
                                 <div class="stat-label">Primary Attack</div>
-                                <div><span class="badge ${getBadgeClass(today.attack_type)}">${today.attack_type || 'Unknown'}</span></div>
+                                <div><span class="badge ${getBadgeClass(data.attack_type)}">${data.attack_type || 'Unknown'}</span></div>
                             </div>
                             ${allTypesHtml}
                             <div class="stat-item">
                                 <div class="stat-label">Baseline Score</div>
-                                <div class="stat-number-small">${today.baseline_score?.toFixed(2) || '0'}</div>
+                                <div class="stat-number-small">${data.baseline_score?.toFixed(2) || '0'}</div>
                             </div>
                             <div class="stat-item">
                                 <div class="stat-label">Isolation Forest</div>
-                                <div class="stat-number-small">${today.flagged_by_isolation ? 'Flagged' : 'Clean'}</div>
+                                <div class="stat-number-small">${data.flagged_by_isolation ? 'Flagged' : 'Clean'}</div>
                             </div>
                         </div>
-                        ${today.verification ? `<div class="divider"></div><div style="font-size:0.7rem; color:#5e7e96;">${today.verification}</div>` : ''}
-                        ${today.analyst_note ? `<div style="margin-top:0.5rem; font-size:0.7rem; color:#c9771e;">${today.analyst_note}</div>` : ''}
+                        ${data.verification ? `<div class="divider"></div><div style="font-size:0.7rem; color:#5e7e96;">${data.verification}</div>` : ''}
+                        ${data.analyst_note ? `<div style="margin-top:0.5rem; font-size:0.7rem; color:#c9771e;">${data.analyst_note}</div>` : ''}
                     `;
                 }
-                todayDiv.innerHTML = `
+                
+                return `
                     <div class="stat-grid">
                         <div class="stat-item">
                             <div class="stat-label">Cumulative Until</div>
-                            <div class="stat-number-small">${formatTime(today.cumulative_until)}</div>
+                            <div class="stat-number-small">${formatTime(data.cumulative_until)}</div>
                         </div>
                         <div class="stat-item">
                             <div class="stat-label">Events Today</div>
-                            <div class="stat-number">${today.total_events || 0}</div>
+                            <div class="stat-number">${data.total_events || 0}</div>
                         </div>
                         <div class="stat-item">
                             <div class="stat-label">Status</div>
-                            <div><span class="badge ${today.flagged ? 'badge-data-theft' : 'badge-success'}">${today.flagged ? 'Flagged' : 'Clean'}</span></div>
+                            <div><span class="badge ${data.flagged ? 'badge-data-theft' : 'badge-success'}">${data.flagged ? 'Flagged' : 'Clean'}</span></div>
                         </div>
                     </div>
                     ${flaggedHtml}
                 `;
-            } else {
-                todayDiv.innerHTML = '<div class="empty-message">No data for today</div>';
+            } catch (error) {
+                console.error('Today error:', error);
+                return `<div class="empty-message">Error loading today's data</div>`;
             }
-            
-            // Load yesterday
-            const yesterday = await apiCall(`/admin/detection/yesterday/${currentUser}`);
-            const yesterdayDiv = document.getElementById(`yesterday${currentUser.charAt(0).toUpperCase() + currentUser.slice(1)}`);
-            
-            if (yesterday && yesterday.analyzed) {
-                yesterdayDiv.innerHTML = `
+        }
+
+        // Load Yesterday
+        async function loadYesterday(displayName) {
+            try {
+                const data = await apiCall(`/admin/detection/yesterday/${displayName}`);
+                
+                if (!data.analyzed) {
+                    return `<div class="empty-message">No anomalies detected - day was clean</div>`;
+                }
+                
+                return `
                     <div class="stat-grid">
-                        <div class="stat-item"><div class="stat-label">Date</div><div class="stat-number-small">${formatDate(yesterday.date)}</div></div>
-                        <div class="stat-item"><div class="stat-label">Attack Type</div><div><span class="badge ${getBadgeClass(yesterday.attack_type)}">${yesterday.attack_type || 'None'}</span></div></div>
-                        <div class="stat-item"><div class="stat-label">Confidence</div><div><span class="${getConfidenceClass(yesterday.confidence)}">${yesterday.confidence || 'LOW'}</span></div></div>
-                        <div class="stat-item"><div class="stat-label">Score</div><div class="stat-number-small">${yesterday.baseline_score?.toFixed(2) || '0'}</div></div>
+                        <div class="stat-item"><div class="stat-label">Date</div><div class="stat-number-small">${formatDate(data.date)}</div></div>
+                        <div class="stat-item"><div class="stat-label">Attack Type</div><div><span class="badge ${getBadgeClass(data.attack_type)}">${data.attack_type || 'None'}</span></div></div>
+                        <div class="stat-item"><div class="stat-label">Confidence</div><div><span class="${getConfidenceClass(data.confidence)}">${data.confidence || 'LOW'}</span></div></div>
+                        <div class="stat-item"><div class="stat-label">Score</div><div class="stat-number-small">${data.baseline_score?.toFixed(2) || '0'}</div></div>
                     </div>
-                    ${yesterday.analyst_notes ? `<div class="divider"></div><div style="font-size:0.7rem;">${yesterday.analyst_notes}</div>` : ''}
+                    ${data.analyst_notes ? `<div class="divider"></div><div style="font-size:0.7rem;">${data.analyst_notes}</div>` : ''}
                 `;
-            } else {
-                yesterdayDiv.innerHTML = '<div class="empty-message">No anomalies detected - day was clean</div>';
+            } catch (error) {
+                console.error('Yesterday error:', error);
+                return `<div class="empty-message">Error loading yesterday's data</div>`;
             }
-            
-            // Load historical
-            const history = await apiCall(`/admin/detection/history/${currentUser}?days_back=30`);
-            const historyDiv = document.getElementById(`historical${currentUser.charAt(0).toUpperCase() + currentUser.slice(1)}`);
-            
-            if (history && history.length > 0) {
+        }
+
+        // Load Historical
+        async function loadHistorical(displayName) {
+            try {
+                const data = await apiCall(`/admin/detection/history/${displayName}?days_back=30`);
+                
+                if (!data || data.length === 0) {
+                    return `<div class="empty-message">No historical anomalies recorded</div>`;
+                }
+                
                 let html = `<div class="table-wrapper"><table class="data-table"><thead>
                     <tr>
                         <th>Date</th>
@@ -393,8 +550,7 @@
                     </tr>
                 </thead><tbody>`;
                 
-                for (const row of history) {
-                    // Extract all types from analyst_notes
+                for (const row of data) {
                     let allTypesHtml = '';
                     let notesContent = row.analyst_notes || '—';
                     
@@ -418,20 +574,40 @@
                         <td style="max-width: 250px; font-size: 0.7rem;">${notesContent.substring(0, 80)}${notesContent.length > 80 ? '...' : ''}</td>
                     </tr>`;
                 }
+                
                 html += `</tbody></table></div>`;
-                historyDiv.innerHTML = html;
-            } else {
-                historyDiv.innerHTML = '<div class="empty-message">No historical anomalies recorded</div>';
+                return html;
+            } catch (error) {
+                console.error('Historical error:', error);
+                return `<div class="empty-message">Error loading historical data</div>`;
             }
+        }
+
+        async function loadUserData(displayName) {
+            const statusSpan = document.getElementById('statusText');
+            statusSpan.innerText = 'Loading...';
+            
+            const [realtimeHtml, todayHtml, yesterdayHtml, historicalHtml] = await Promise.all([
+                loadRealtime(displayName),
+                loadToday(displayName),
+                loadYesterday(displayName),
+                loadHistorical(displayName)
+            ]);
+            
+            document.getElementById(`realtime-${displayName}`).innerHTML = realtimeHtml;
+            document.getElementById(`today-${displayName}`).innerHTML = todayHtml;
+            document.getElementById(`yesterday-${displayName}`).innerHTML = yesterdayHtml;
+            document.getElementById(`historical-${displayName}`).innerHTML = historicalHtml;
             
             statusSpan.innerText = `Updated at ${new Date().toLocaleTimeString()}`;
         }
 
-        async function triggerToday() {
+        async function triggerTodayAnalysis() {
             const statusSpan = document.getElementById('statusText');
             statusSpan.innerText = 'Analyzing today...';
             await apiCall('/admin/detection/today/trigger', { method: 'POST' });
-            await loadPage();
+            await loadUserData(currentUser);
+            statusSpan.innerText = `Updated at ${new Date().toLocaleTimeString()}`;
         }
 
         function switchUser(user) {
@@ -442,7 +618,14 @@
                 if (btn.getAttribute('data-user') === user) btn.classList.add('active');
                 else btn.classList.remove('active');
             });
-            loadPage();
+            loadUserData(user);
+        }
+
+        function startAutoRefresh() {
+            if (window.refreshInterval) clearInterval(window.refreshInterval);
+            window.refreshInterval = setInterval(() => {
+                loadUserData(currentUser);
+            }, 30000);
         }
 
         async function logout() {
@@ -451,14 +634,14 @@
             window.location.href = '/login-page';
         }
 
-        document.getElementById('analyzeTodayBtn').addEventListener('click', triggerToday);
-        document.getElementById('refreshBtn').addEventListener('click', loadPage);
+        document.getElementById('analyzeTodayBtn').addEventListener('click', triggerTodayAnalysis);
+        document.getElementById('refreshBtn').addEventListener('click', () => loadUserData(currentUser));
         document.querySelectorAll('.tab').forEach(btn => {
             btn.addEventListener('click', () => switchUser(btn.getAttribute('data-user')));
         });
 
-        setInterval(loadPage, 60000);
-        loadPage();
+        startAutoRefresh();
+        loadUserData('alice');
     </script>
 </body>
 </html>

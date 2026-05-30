@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from controllers.auth_controller import get_current_user
 from services.detection_service import DetectionService
+from services.realtime_detection import RealtimeDetection
 
 router = APIRouter(prefix="/admin/detection", tags=["Detection"])
 
@@ -39,5 +40,10 @@ async def trigger_midnight_job(current_user = Depends(require_admin)):
 
 
 @router.get("/realtime/alerts")
-async def get_realtime_alerts(current_user = Depends(require_admin)):
-    return []
+async def get_realtime_alerts(
+    user_id: str = None, 
+    hours: int = 24, 
+    current_user = Depends(require_admin)
+):
+    """Get real-time sliding window alerts"""
+    return RealtimeDetection.get_recent_alerts(user_id, hours)

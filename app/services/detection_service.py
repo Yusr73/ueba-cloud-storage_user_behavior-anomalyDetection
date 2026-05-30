@@ -15,7 +15,6 @@ class DetectionService:
         "unique_paths", "path_depth_mean", "unique_dir1", "unique_dir2", "path_reuse_ratio"
     ]
     
-    # Map all UID variations to canonical names
     UID_MAPPING = {
         'alice': 'alice',
         'alice-6384e2b2': 'alice',
@@ -176,8 +175,10 @@ class DetectionService:
     @staticmethod
     def classify_attack(contributors, login_success_rate=None):
         """
-        THE RULES - in order of specific to general
-        Each attack has a unique fingerprint
+        Classify attack based on spike patterns.
+        ACCOUNT_TAKEOVER: login_attempt spike + success_rate < 50%
+        BRUTE_FORCE: login_attempt spike + success_rate = 0%
+        BUSY_DAY: login_attempt spike + success_rate >= 80% (false positive)
         """
         if pd.isna(contributors) or contributors == "No features exceeded threshold":
             return "NONE", [], "No anomalies detected"
@@ -187,58 +188,58 @@ class DetectionService:
         attack_types = []
         descriptions = []
         
-        # RULE 1: RANSOMWARE - WRITES files (encryption)
+        # RANSOMWARE
         if 'file_written' in spikes and 'unique_paths' in spikes:
             attack_types.append("RANSOMWARE")
-            descriptions.append("Many file write operations on different paths - pattern matches ransomware encryption")
+            descriptions.append("File writes on unique paths - encryption pattern")
         
-        # RULE 2: DATA THEFT - READS files (exfiltration)
-        elif 'file_accessed' in spikes and 'unique_paths' in spikes:
+        # DATA_THEFT
+        if 'file_accessed' in spikes and 'unique_paths' in spikes:
             attack_types.append("DATA_THEFT")
-            descriptions.append("Many file read operations on different paths - pattern matches data exfiltration")
+            descriptions.append("File reads on unique paths - exfiltration pattern")
         
-        # RULE 3: ACCOUNT TAKEOVER - Failed logins then success
-        elif 'login_attempt' in spikes and 'login_successful' in spikes and login_success_rate is not None and login_success_rate < 0.5:
-            attack_types.append("ACCOUNT_TAKEOVER")
-            descriptions.append(f"Login attempts with {login_success_rate:.0%} success rate - pattern matches credential stuffing")
+        # LOGIN ATTACKS - based on success_rate percentage
+        if 'login_attempt' in spikes and login_success_rate is not None:
+            if login_success_rate == 0:
+                attack_types.append("BRUTE_FORCE")
+                descriptions.append(f"Login attempts with 0% success rate - password spraying")
+            elif login_success_rate < 0.5:
+                attack_types.append("ACCOUNT_TAKEOVER")
+                descriptions.append(f"Login attempts with {login_success_rate:.0%}% success rate - credential stuffing")
+            elif login_success_rate >= 0.8:
+                # False positive - busy day, not stored as attack
+                attack_types.append("BUSY_DAY")
+                descriptions.append(f"High login volume with {login_success_rate:.0%}% success rate - legitimate busy day")
         
-        # RULE 4: BRUTE FORCE - Many failed logins, no successes
-        elif 'login_attempt' in spikes and 'login_successful' not in spikes:
-            attack_types.append("BRUTE_FORCE")
-            descriptions.append("Many login attempts with no successful logins - pattern matches password brute force")
-        
-        # RULE 5: DIRECTORY TRAVERSAL - Exploring directories
-        elif 'unique_dir1' in spikes or 'unique_dir2' in spikes:
+        # DIRECTORY_TRAVERSAL
+        if 'unique_dir1' in spikes or 'unique_dir2' in spikes:
             attack_types.append("DIRECTORY_TRAVERSAL")
-            descriptions.append("Accessing many different directories - pattern matches directory enumeration")
+            descriptions.append("Accessing many different directories - reconnaissance")
         
-        # RULE 6: OFF HOURS - Night work
-        elif 'night_fraction' in spikes:
+        # OFF_HOURS
+        if 'night_fraction' in spikes:
             attack_types.append("OFF_HOURS")
-            descriptions.append("Activity during night hours (0-5 AM) - unusual timing")
+            descriptions.append("Activity during night hours (0-5 AM)")
         
-        # RULE 7: MASS ACTIVITY - High volume, normal patterns
-        elif 'events_total' in spikes and len(spikes) <= 2:
+        # MASS_ACTIVITY
+        if 'events_total' in spikes and not attack_types:
             attack_types.append("MASS_ACTIVITY")
             descriptions.append("Unusually high volume of events")
         
-        # RULE 8: UNKNOWN
-        else:
+        if not attack_types:
             attack_types.append("UNKNOWN")
             descriptions.append(f"Unusual pattern: {', '.join(spikes[:3])}")
         
-        # Severity order for primary attack type
-        severity_order = ["RANSOMWARE", "DATA_THEFT", "ACCOUNT_TAKEOVER", "BRUTE_FORCE", "DIRECTORY_TRAVERSAL", "OFF_HOURS", "MASS_ACTIVITY", "UNKNOWN"]
+        # Priority order
+        priority = ["RANSOMWARE", "DATA_THEFT", "ACCOUNT_TAKEOVER", "BRUTE_FORCE", "DIRECTORY_TRAVERSAL", "OFF_HOURS", "MASS_ACTIVITY", "UNKNOWN"]
         
         primary = "UNKNOWN"
-        for sev in severity_order:
-            if sev in attack_types:
-                primary = sev
+        for p in priority:
+            if p in attack_types:
+                primary = p
                 break
         
-        combined_desc = " | ".join(descriptions)
-        
-        return primary, attack_types, combined_desc
+        return primary, attack_types, " | ".join(descriptions)
     
     @staticmethod
     def verify_data_theft(date_str, daily_df):
@@ -264,12 +265,12 @@ class DetectionService:
         rate = float(row['login_success_rate'].iloc[0])
         attempts = int(row['login_attempt'].iloc[0])
         if rate < 0.3:
-            return f"ACCOUNT_TAKEOVER_RISK - {attempts} attempts with {rate:.0%} success rate"
+            return f"ACCOUNT_TAKEOVER_RISK - {attempts} attempts with {rate:.0%}% success rate"
         elif rate < 0.7:
-            return f"BRUTE_FORCE - {attempts} attempts with {rate:.0%} success rate"
+            return f"BRUTE_FORCE - {attempts} attempts with {rate:.0%}% success rate"
         elif rate > 0.8:
-            return f"LEGITIMATE_BUSY_DAY - {attempts} attempts with {rate:.0%} success rate"
-        return f"SUSPICIOUS - {attempts} attempts with {rate:.0%} success rate"
+            return f"LEGITIMATE_BUSY_DAY - {attempts} attempts with {rate:.0%}% success rate"
+        return f"SUSPICIOUS - {attempts} attempts with {rate:.0%}% success rate"
     
     @staticmethod
     def analyze_day(uid, target_date):
