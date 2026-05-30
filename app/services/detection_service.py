@@ -1,23 +1,53 @@
 import pandas as pd
 import numpy as np
-from models.database import get_db
+from datetime import datetime, timezone, timedelta
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
-from datetime import datetime, timedelta
+from models.database import get_db
+from models.database import store_daily_anomaly, get_historical_anomalies, get_yesterdays_anomaly
+import json
 
 class DetectionService:
     
     FEATURES = [
         "events_total", "active_hours", "night_fraction", "unique_types",
-        "file_events", "login_attempt", "login_successful", "login_success_rate",
+        "file_accessed", "file_written", "login_attempt", "login_successful", "login_success_rate",
         "unique_paths", "path_depth_mean", "unique_dir1", "unique_dir2", "path_reuse_ratio"
     ]
     
+    # Map all UID variations to canonical names
+    UID_MAPPING = {
+        'alice': 'alice',
+        'alice-6384e2b2': 'alice',
+        'bob': 'bob',
+        'bob-9f9d51bc': 'bob',
+        'yosr': 'yosr',
+        'yosr-4da1a7f0': 'yosr',
+        'admin': 'admin',
+        'admin-21232f29': 'admin'
+    }
+    
     @staticmethod
-    def get_daily_features(uid):
+    def get_canonical_uid(uid):
+        return DetectionService.UID_MAPPING.get(uid, uid)
+    
+    @staticmethod
+    def get_all_variants(canonical_uid):
+        return [uid for uid, canon in DetectionService.UID_MAPPING.items() if canon == canonical_uid]
+    
+    @staticmethod
+    def get_daily_features_for_date_range(uid, start_date, end_date):
+        canonical_uid = DetectionService.get_canonical_uid(uid)
+        variants = DetectionService.get_all_variants(canonical_uid)
+        
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("SELECT time, type, params FROM logs WHERE uid = %s ORDER BY time", (uid,))
+        cur.execute("""
+            SELECT time, type, params 
+            FROM logs 
+            WHERE uid = ANY(%s) AND time >= %s AND time < %s
+            ORDER BY time
+        """, (variants, start_date, end_date))
         rows = cur.fetchall()
         cur.close()
         conn.close()
@@ -31,19 +61,15 @@ class DetectionService:
             event_type = row['type']
             params = row['params'] if row['params'] else {}
             if isinstance(params, str):
-                import json
                 try:
                     params = json.loads(params)
                 except:
                     params = {}
-            
             path = params.get("path", "") if isinstance(params, dict) else ""
-            
             data.append({
                 "time": time,
                 "type": event_type,
                 "params_path": path,
-                "params_nkeys": len(params) if isinstance(params, dict) else 0,
                 "hour": time.hour if time else 0,
                 "date": time.date() if time else None
             })
@@ -64,6 +90,7 @@ class DetectionService:
         df["dir1"] = df["params_path"].apply(lambda p: get_dir(p, 0))
         df["dir2"] = df["params_path"].apply(lambda p: get_dir(p, 1))
         df["is_file_accessed"] = (df["type"] == "file_accessed").astype(int)
+        df["is_file_written"] = (df["type"] == "file_written").astype(int)
         df["is_login_attempt"] = (df["type"] == "login_attempt").astype(int)
         df["is_login_successful"] = (df["type"] == "login_successful").astype(int)
         
@@ -75,7 +102,8 @@ class DetectionService:
             "active_hours": g["hour"].nunique(),
             "night_events": g["hour"].apply(lambda s: ((s >= 0) & (s <= 5)).sum()),
             "unique_types": g["type"].nunique(),
-            "file_events": g["is_file_accessed"].sum(),
+            "file_accessed": g["is_file_accessed"].sum(),
+            "file_written": g["is_file_written"].sum(),
             "login_attempt": g["is_login_attempt"].sum(),
             "login_successful": g["is_login_successful"].sum(),
             "unique_paths": g["params_path"].nunique(dropna=True),
@@ -86,15 +114,33 @@ class DetectionService:
         
         daily_df["night_fraction"] = daily_df["night_events"] / (daily_df["events_total"] + eps)
         daily_df["login_success_rate"] = daily_df["login_successful"] / (daily_df["login_attempt"] + eps)
-        daily_df["path_reuse_ratio"] = daily_df["file_events"] / (daily_df["unique_paths"] + eps)
+        daily_df["path_reuse_ratio"] = daily_df["file_accessed"] / (daily_df["unique_paths"] + eps)
         daily_df["date"] = daily_df["date"].astype(str)
         
         return daily_df
     
     @staticmethod
-    def compute_global_baseline(daily_df, percentile=95):
+    def run_isolation_forest(daily_df, contamination=0.05):
         if daily_df.empty or len(daily_df) < 3:
-            return pd.DataFrame()
+            return None, None
+        
+        features_present = [f for f in DetectionService.FEATURES if f in daily_df.columns]
+        X = daily_df[features_present].replace([np.inf, -np.inf], np.nan)
+        for col in X.columns:
+            X[col] = X[col].fillna(X[col].median())
+        
+        X_scaled = StandardScaler().fit_transform(X)
+        iso_model = IsolationForest(n_estimators=100, contamination=contamination, random_state=42).fit(X_scaled)
+        
+        anomaly_scores = -iso_model.decision_function(X_scaled)
+        predictions = iso_model.predict(X_scaled)
+        
+        return anomaly_scores, predictions
+    
+    @staticmethod
+    def run_baseline(daily_df, percentile=95):
+        if daily_df.empty or len(daily_df) < 3:
+            return None, None, None
         
         eps = 1e-9
         baseline = {}
@@ -102,7 +148,7 @@ class DetectionService:
             if f not in daily_df.columns:
                 continue
             s = daily_df[f].replace([np.inf, -np.inf], np.nan).dropna()
-            baseline[f] = {"p95": float(np.nanpercentile(s, percentile)) if not s.empty else np.nan}
+            baseline[f] = float(np.nanpercentile(s, percentile)) if not s.empty else np.nan
         
         scores, explanations, flags = [], [], []
         
@@ -111,7 +157,7 @@ class DetectionService:
             for f in DetectionService.FEATURES:
                 if f not in row or f not in baseline:
                     continue
-                x, t = float(row[f]), baseline[f]["p95"]
+                x, t = float(row[f]), baseline[f]
                 if np.isnan(t) or t == 0:
                     continue
                 if x > t:
@@ -120,287 +166,319 @@ class DetectionService:
                     flag_count += 1
                     contribs.append((f, x, t, r))
             contribs.sort(key=lambda z: z[3], reverse=True)
-            expl = "; ".join([f"{f}={x:.3g} vs p95={t:.3g} ({r:.2f}x)" for (f, x, t, r) in contribs[:5]]) if contribs else "No features exceeded p95"
+            expl = "; ".join([f"{f}={x:.3g} vs p{percentile}={t:.3g} ({r:.2f}x)" for (f, x, t, r) in contribs[:5]]) if contribs else "No features exceeded threshold"
             scores.append(score)
             explanations.append(expl)
             flags.append(flag_count)
         
-        result = daily_df.copy()
-        result["anomaly_score"] = scores
-        result["num_flagged_features"] = flags
-        result["top_contributors"] = explanations
-        return result
+        return scores, flags, explanations
     
     @staticmethod
-    def compute_isolation_forest(daily_df, contamination=0.05):
-        if daily_df.empty or len(daily_df) < 3:
-            return pd.DataFrame()
+    def classify_attack(contributors, login_success_rate=None):
+        """
+        THE RULES - in order of specific to general
+        Each attack has a unique fingerprint
+        """
+        if pd.isna(contributors) or contributors == "No features exceeded threshold":
+            return "NONE", [], "No anomalies detected"
         
-        features_present = [f for f in DetectionService.FEATURES if f in daily_df.columns]
-        X = daily_df[features_present].replace([np.inf, -np.inf], np.nan)
-        for col in X.columns:
-            X[col] = X[col].fillna(X[col].median())
-        
-        X_scaled = StandardScaler().fit_transform(X)
-        iso_model = IsolationForest(n_estimators=500, contamination=contamination, random_state=42).fit(X_scaled)
-        
-        result = daily_df[["date"]].copy()
-        result["iso_pred"] = iso_model.predict(X_scaled)
-        result["iso_anomaly_score"] = -iso_model.decision_function(X_scaled)
-        return result
-    
-    @staticmethod
-    def classify_attack(contributors):
-        if pd.isna(contributors) or contributors == "No features exceeded p95":
-            return "NONE"
         spikes = [s.split('=')[0] for s in contributors.split('; ') if '=' in s]
-        if 'file_events' in spikes and 'unique_paths' in spikes:
-            return "DATA_THEFT"
-        if 'events_total' in spikes and 'active_hours' in spikes:
-            return "BOT_OR_MASS_ACTIVITY"
-        if 'unique_dir1' in spikes or 'unique_dir2' in spikes:
-            return "DIRECTORY_TRAVERSAL"
-        if 'login_attempt' in spikes:
-            return "LOGIN_ACTIVITY"
-        if 'night_fraction' in spikes:
-            return "OFF_HOURS"
-        if 'unique_types' in spikes:
-            return "DIVERSE_ACTIVITY"
-        if 'events_total' in spikes and len(spikes) == 1:
-            return "MASS_ACTIVITY"
-        if 'path_reuse_ratio' in spikes and len(spikes) == 1:
-            return "PATH_REUSE_ANOMALY"
-        return "UNKNOWN"
+        
+        attack_types = []
+        descriptions = []
+        
+        # RULE 1: RANSOMWARE - WRITES files (encryption)
+        if 'file_written' in spikes and 'unique_paths' in spikes:
+            attack_types.append("RANSOMWARE")
+            descriptions.append("Many file write operations on different paths - pattern matches ransomware encryption")
+        
+        # RULE 2: DATA THEFT - READS files (exfiltration)
+        elif 'file_accessed' in spikes and 'unique_paths' in spikes:
+            attack_types.append("DATA_THEFT")
+            descriptions.append("Many file read operations on different paths - pattern matches data exfiltration")
+        
+        # RULE 3: ACCOUNT TAKEOVER - Failed logins then success
+        elif 'login_attempt' in spikes and 'login_successful' in spikes and login_success_rate is not None and login_success_rate < 0.5:
+            attack_types.append("ACCOUNT_TAKEOVER")
+            descriptions.append(f"Login attempts with {login_success_rate:.0%} success rate - pattern matches credential stuffing")
+        
+        # RULE 4: BRUTE FORCE - Many failed logins, no successes
+        elif 'login_attempt' in spikes and 'login_successful' not in spikes:
+            attack_types.append("BRUTE_FORCE")
+            descriptions.append("Many login attempts with no successful logins - pattern matches password brute force")
+        
+        # RULE 5: DIRECTORY TRAVERSAL - Exploring directories
+        elif 'unique_dir1' in spikes or 'unique_dir2' in spikes:
+            attack_types.append("DIRECTORY_TRAVERSAL")
+            descriptions.append("Accessing many different directories - pattern matches directory enumeration")
+        
+        # RULE 6: OFF HOURS - Night work
+        elif 'night_fraction' in spikes:
+            attack_types.append("OFF_HOURS")
+            descriptions.append("Activity during night hours (0-5 AM) - unusual timing")
+        
+        # RULE 7: MASS ACTIVITY - High volume, normal patterns
+        elif 'events_total' in spikes and len(spikes) <= 2:
+            attack_types.append("MASS_ACTIVITY")
+            descriptions.append("Unusually high volume of events")
+        
+        # RULE 8: UNKNOWN
+        else:
+            attack_types.append("UNKNOWN")
+            descriptions.append(f"Unusual pattern: {', '.join(spikes[:3])}")
+        
+        # Severity order for primary attack type
+        severity_order = ["RANSOMWARE", "DATA_THEFT", "ACCOUNT_TAKEOVER", "BRUTE_FORCE", "DIRECTORY_TRAVERSAL", "OFF_HOURS", "MASS_ACTIVITY", "UNKNOWN"]
+        
+        primary = "UNKNOWN"
+        for sev in severity_order:
+            if sev in attack_types:
+                primary = sev
+                break
+        
+        combined_desc = " | ".join(descriptions)
+        
+        return primary, attack_types, combined_desc
     
     @staticmethod
-    def verify_data_theft(date_str, attack_type, daily_df):
-        if attack_type != "DATA_THEFT":
-            return None
+    def verify_data_theft(date_str, daily_df):
         daily_df['date_parsed'] = pd.to_datetime(daily_df['date'])
         row = daily_df[daily_df['date_parsed'] == pd.to_datetime(date_str)]
         if row.empty:
             return "NO_DATA"
-        current = row['path_reuse_ratio'].iloc[0]
+        current = float(row['path_reuse_ratio'].iloc[0])
         historical = daily_df[daily_df['date_parsed'] < pd.to_datetime(date_str)]
         if len(historical) == 0:
             return "INSUFFICIENT_HISTORY"
-        return "CONFIRMED" if current < historical['path_reuse_ratio'].median() else "SUSPICIOUS"
+        median = float(historical['path_reuse_ratio'].median())
+        if current < median:
+            return "CONFIRMED - unusual path reuse pattern"
+        return "SUSPICIOUS - elevated but within normal variation"
     
     @staticmethod
-    def verify_login(date_str, attack_type, daily_df):
-        if attack_type != "LOGIN_ACTIVITY":
-            return None
+    def verify_login(date_str, daily_df):
         daily_df['date_parsed'] = pd.to_datetime(daily_df['date'])
         row = daily_df[daily_df['date_parsed'] == pd.to_datetime(date_str)]
         if row.empty:
             return "NO_DATA"
-        rate = row['login_success_rate'].iloc[0]
-        if rate < 0.5:
-            return "BRUTE_FORCE"
-        if rate > 0.8:
-            return "FALSE_POSITIVE_BUSY_DAY"
-        return "SUSPICIOUS"
+        rate = float(row['login_success_rate'].iloc[0])
+        attempts = int(row['login_attempt'].iloc[0])
+        if rate < 0.3:
+            return f"ACCOUNT_TAKEOVER_RISK - {attempts} attempts with {rate:.0%} success rate"
+        elif rate < 0.7:
+            return f"BRUTE_FORCE - {attempts} attempts with {rate:.0%} success rate"
+        elif rate > 0.8:
+            return f"LEGITIMATE_BUSY_DAY - {attempts} attempts with {rate:.0%} success rate"
+        return f"SUSPICIOUS - {attempts} attempts with {rate:.0%} success rate"
     
     @staticmethod
-    def get_full_analysis(uid):
-        daily_df = DetectionService.get_daily_features(uid)
+    def analyze_day(uid, target_date):
+        start_date = datetime.combine(target_date, datetime.min.time())
+        end_date = start_date + timedelta(days=1)
+        
+        canonical_uid = DetectionService.get_canonical_uid(uid)
+        daily_df = DetectionService.get_daily_features_for_date_range(canonical_uid, start_date, end_date)
+        
         if daily_df.empty:
-            return {"error": f"No data for user {uid}"}
+            return {"error": f"No data for {canonical_uid} on {target_date}"}
         
-        baseline_df = DetectionService.compute_global_baseline(daily_df)
-        iforest_df = DetectionService.compute_isolation_forest(daily_df)
+        iso_scores, iso_preds = DetectionService.run_isolation_forest(daily_df)
+        baseline_scores, baseline_flags, baseline_contributors = DetectionService.run_baseline(daily_df)
         
-        if baseline_df.empty:
-            return {"error": f"Baseline failed for {uid}"}
+        flagged_by_iso = iso_preds is not None and -1 in iso_preds
+        flagged_by_baseline = baseline_scores is not None and any(s > 0 for s in baseline_scores)
         
-        baseline_df = baseline_df.merge(iforest_df, on="date", how="left")
-        baseline_df['if_flagged'] = baseline_df['iso_pred'] == -1
-        baseline_df['confidence'] = baseline_df['if_flagged'].apply(lambda x: "HIGH" if x else "MEDIUM")
-        baseline_df['attack_type'] = baseline_df['top_contributors'].apply(DetectionService.classify_attack)
-        baseline_df['data_theft_verification'] = baseline_df.apply(lambda r: DetectionService.verify_data_theft(r['date'], r['attack_type'], daily_df), axis=1)
-        baseline_df['login_verification'] = baseline_df.apply(lambda r: DetectionService.verify_login(r['date'], r['attack_type'], daily_df), axis=1)
+        should_store = flagged_by_iso or flagged_by_baseline
+        
+        if not should_store:
+            return {
+                "date": target_date.isoformat(),
+                "user_id": canonical_uid,
+                "flagged": False,
+                "message": "No anomalies detected - not stored"
+            }
+        
+        flagged_idx = None
+        if flagged_by_baseline and baseline_scores:
+            for i, score in enumerate(baseline_scores):
+                if score > 0:
+                    flagged_idx = i
+                    break
+        elif flagged_by_iso and iso_scores is not None:
+            for i, pred in enumerate(iso_preds):
+                if pred == -1:
+                    flagged_idx = i
+                    break
+        
+        attack_type = "UNKNOWN"
+        analyst_notes = ""
+        confidence = "LOW"
+        top_contributors = ""
+        num_flagged = 0
+        baseline_score_val = 0.0
+        iso_score_val = 0.0
+        
+        if flagged_idx is not None:
+            baseline_score_val = float(baseline_scores[flagged_idx]) if baseline_scores else 0.0
+            iso_score_val = float(iso_scores[flagged_idx]) if iso_scores is not None else 0.0
+            top_contributors = baseline_contributors[flagged_idx] if baseline_contributors else ""
+            num_flagged = int(baseline_flags[flagged_idx]) if baseline_flags else 0
+            
+            if flagged_by_baseline:
+                login_rate = float(daily_df.iloc[flagged_idx]['login_success_rate']) if 'login_success_rate' in daily_df.columns else None
+                primary_type, all_types, description = DetectionService.classify_attack(top_contributors, login_rate)
+                attack_type = primary_type
+                
+                all_types_str = " + ".join(all_types)
+                analyst_notes = f"[{all_types_str}] {description}"
+                
+                if "DATA_THEFT" in all_types or "RANSOMWARE" in all_types:
+                    verification = DetectionService.verify_data_theft(daily_df.iloc[flagged_idx]['date'], daily_df)
+                    analyst_notes += f"\nVerification: {verification}"
+                elif "ACCOUNT_TAKEOVER" in all_types or "BRUTE_FORCE" in all_types:
+                    verification = DetectionService.verify_login(daily_df.iloc[flagged_idx]['date'], daily_df)
+                    analyst_notes += f"\nVerification: {verification}"
+                
+                confidence = "HIGH" if flagged_by_iso else "MEDIUM"
+            else:
+                analyst_notes = "Recommend further manual raw log investigation - Isolation Forest flagged but baseline did not confirm"
+                confidence = "LOW"
+                attack_type = "ISOLATION_ONLY"
+        
+        store_daily_anomaly(
+            target_date, canonical_uid, iso_score_val, baseline_score_val,
+            flagged_by_iso, flagged_by_baseline, attack_type,
+            top_contributors, num_flagged, confidence, analyst_notes
+        )
         
         return {
-            "user_id": uid,
-            "total_days": len(daily_df),
-            "flagged_days": len(baseline_df[baseline_df['anomaly_score'] > 0]),
-            "results": baseline_df.to_dict(orient="records")
+            "date": target_date.isoformat(),
+            "user_id": canonical_uid,
+            "flagged": True,
+            "flagged_by_isolation": flagged_by_iso,
+            "flagged_by_baseline": flagged_by_baseline,
+            "attack_type": attack_type,
+            "confidence": confidence,
+            "analyst_notes": analyst_notes,
+            "baseline_score": baseline_score_val,
+            "iso_score": iso_score_val
         }
     
     @staticmethod
-    def detect_rare_events(uid):
-        """Phase 2: Détection d'événements rares avec fenêtres glissantes"""
+    def analyze_today_cumulative(uid):
+        today = datetime.now(timezone.utc).date()
+        start_date = datetime.combine(today, datetime.min.time())
+        current_time = datetime.now(timezone.utc)
         
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT time, type
-            FROM logs
-            WHERE uid = %s
-            ORDER BY time
-        """, (uid,))
-        rows = cur.fetchall()
-        cur.close()
-        conn.close()
+        canonical_uid = DetectionService.get_canonical_uid(uid)
         
-        if not rows:
-            return {"error": f"No data for user {uid}"}
+        today_df = DetectionService.get_daily_features_for_date_range(canonical_uid, start_date, current_time)
         
-        # Déterminer le multiplicateur selon l'utilisateur
-        if uid == "alice":
-            multiplier = 2
-            profile = "stable"
-        else:
-            multiplier = 3
-            profile = "instable"
-        
-        # Listes pour stocker les maxima historiques
-        writes_1min = []
-        deletes_5min = []
-        creates_5min = []
-        access_after_login = []
-        
-        # Listes pour les anomalies
-        ransomware_alerts = []
-        deletion_alerts = []
-        creation_alerts = []
-        account_alerts = []
-        
-        # Variables pour les fenêtres
-        current_window_1min = None
-        current_writes = 0
-        window_start_1min = None
-        
-        current_window_5min = None
-        current_deletes = 0
-        current_creates = 0
-        window_start_5min = None
-        
-        last_login_time = None
-        access_count = 0
-        
-        for row in rows:
-            time = row['time']
-            event_type = row['type']
-            
-            # Fenêtre 1 minute pour file_written
-            window_1min = time.strftime("%Y-%m-%d %H:%M")
-            if window_1min != current_window_1min:
-                if current_window_1min is not None:
-                    writes_1min.append(current_writes)
-                    # Vérifier seuil ransomware
-                    historical_max = max(writes_1min[:-1]) if len(writes_1min) > 1 else 0
-                    if current_writes > historical_max * multiplier and historical_max > 0:
-                        ransomware_alerts.append({
-                            "time": current_window_1min,
-                            "count": current_writes,
-                            "threshold": historical_max * multiplier,
-                            "multiplier": multiplier
-                        })
-                current_window_1min = window_1min
-                current_writes = 0
-            
-            if event_type == "file_written":
-                current_writes += 1
-            
-            # Fenêtre 5 minutes pour file_deleted et file_created
-            min_5 = (time.minute // 5) * 5
-            window_5min = time.strftime(f"%Y-%m-%d %H:{min_5:02d}")
-            if window_5min != current_window_5min:
-                if current_window_5min is not None:
-                    deletes_5min.append(current_deletes)
-                    creates_5min.append(current_creates)
-                    # Vérifier seuil suppression massive
-                    historical_max_del = max(deletes_5min[:-1]) if len(deletes_5min) > 1 else 0
-                    if current_deletes > historical_max_del * multiplier and historical_max_del > 0:
-                        deletion_alerts.append({
-                            "time": current_window_5min,
-                            "count": current_deletes,
-                            "threshold": historical_max_del * multiplier,
-                            "multiplier": multiplier
-                        })
-                    # Vérifier seuil dépôt malveillant
-                    historical_max_cre = max(creates_5min[:-1]) if len(creates_5min) > 1 else 0
-                    if current_creates > historical_max_cre * multiplier and historical_max_cre > 0:
-                        creation_alerts.append({
-                            "time": current_window_5min,
-                            "count": current_creates,
-                            "threshold": historical_max_cre * multiplier,
-                            "multiplier": multiplier
-                        })
-                current_window_5min = window_5min
-                current_deletes = 0
-                current_creates = 0
-            
-            if event_type == "file_deleted":
-                current_deletes += 1
-            elif event_type == "file_created":
-                current_creates += 1
-            
-            # Accès après login
-            if event_type == "login_successful":
-                last_login_time = time
-                access_count = 0
-            elif event_type == "file_accessed" and last_login_time:
-                if (time - last_login_time).total_seconds() <= 60:
-                    access_count += 1
-                    access_after_login.append(access_count)
-                    # Vérifier seuil compte volé
-                    historical_max_acc = max(access_after_login[:-1]) if len(access_after_login) > 1 else 0
-                    if access_count > historical_max_acc * multiplier and historical_max_acc > 0:
-                        account_alerts.append({
-                            "login_time": last_login_time.strftime("%Y-%m-%d %H:%M:%S"),
-                            "count": access_count,
-                            "threshold": historical_max_acc * multiplier,
-                            "multiplier": multiplier
-                        })
-        
-        # Traiter la dernière fenêtre
-        if current_window_1min is not None:
-            writes_1min.append(current_writes)
-            historical_max = max(writes_1min[:-1]) if len(writes_1min) > 1 else 0
-            if current_writes > historical_max * multiplier and historical_max > 0:
-                ransomware_alerts.append({
-                    "time": current_window_1min,
-                    "count": current_writes,
-                    "threshold": historical_max * multiplier,
-                    "multiplier": multiplier
-                })
-        
-        if current_window_5min is not None:
-            deletes_5min.append(current_deletes)
-            creates_5min.append(current_creates)
-            historical_max_del = max(deletes_5min[:-1]) if len(deletes_5min) > 1 else 0
-            if current_deletes > historical_max_del * multiplier and historical_max_del > 0:
-                deletion_alerts.append({
-                    "time": current_window_5min,
-                    "count": current_deletes,
-                    "threshold": historical_max_del * multiplier,
-                    "multiplier": multiplier
-                })
-            historical_max_cre = max(creates_5min[:-1]) if len(creates_5min) > 1 else 0
-            if current_creates > historical_max_cre * multiplier and historical_max_cre > 0:
-                creation_alerts.append({
-                    "time": current_window_5min,
-                    "count": current_creates,
-                    "threshold": historical_max_cre * multiplier,
-                    "multiplier": multiplier
-                })
-        
-        return {
-            "user_id": uid,
-            "profile": profile,
-            "multiplier": multiplier,
-            "anomalies": {
-                "ransomware": ransomware_alerts,
-                "mass_deletion": deletion_alerts,
-                "malicious_upload": creation_alerts,
-                "account_takeover": account_alerts
-            },
-            "thresholds": {
-                "ransomware": max(writes_1min) if writes_1min else 0,
-                "mass_deletion": max(deletes_5min) if deletes_5min else 0,
-                "malicious_upload": max(creates_5min) if creates_5min else 0,
-                "account_takeover": max(access_after_login) if access_after_login else 0
+        if today_df.empty:
+            return {
+                "date": today.isoformat(),
+                "user_id": canonical_uid,
+                "cumulative_until": current_time.isoformat(),
+                "has_data": False,
+                "total_events": 0,
+                "message": "No data for today yet"
             }
+        
+        total_events = int(today_df.iloc[0]['events_total']) if not today_df.empty else 0
+        
+        hist_start = datetime(2017, 7, 7)
+        hist_end = datetime(2017, 10, 4)
+        historical_df = DetectionService.get_daily_features_for_date_range(canonical_uid, hist_start, hist_end)
+        
+        if historical_df.empty:
+            return {
+                "date": today.isoformat(),
+                "user_id": canonical_uid,
+                "cumulative_until": current_time.isoformat(),
+                "has_data": True,
+                "total_events": total_events,
+                "flagged": False,
+                "message": "No historical data for baseline"
+            }
+        
+        combined_df = pd.concat([historical_df, today_df], ignore_index=True)
+        
+        iso_scores, iso_preds = DetectionService.run_isolation_forest(combined_df)
+        baseline_scores, baseline_flags, baseline_contributors = DetectionService.run_baseline(combined_df)
+        
+        if baseline_scores is None:
+            return {
+                "date": today.isoformat(),
+                "user_id": canonical_uid,
+                "cumulative_until": current_time.isoformat(),
+                "has_data": True,
+                "total_events": total_events,
+                "flagged": False,
+                "message": "Baseline calculation failed"
+            }
+        
+        today_score = float(baseline_scores[-1]) if baseline_scores else 0.0
+        today_flags = int(baseline_flags[-1]) if baseline_flags else 0
+        today_contributors = baseline_contributors[-1] if baseline_contributors else ""
+        
+        today_iso_flagged = False
+        today_iso_score = 0.0
+        if iso_preds is not None:
+            today_iso_flagged = bool(iso_preds[-1] == -1)
+            today_iso_score = float(iso_scores[-1]) if iso_scores is not None else 0.0
+        
+        flagged_by_baseline = today_score > 0
+        flagged_by_iso = today_iso_flagged
+        flagged = flagged_by_baseline or flagged_by_iso
+        
+        result = {
+            "date": today.isoformat(),
+            "user_id": canonical_uid,
+            "cumulative_until": current_time.isoformat(),
+            "has_data": True,
+            "total_events": total_events,
+            "flagged": flagged,
+            "flagged_by_baseline": flagged_by_baseline,
+            "flagged_by_isolation": flagged_by_iso,
+            "baseline_score": today_score if flagged_by_baseline else 0.0,
+            "iso_score": today_iso_score
         }
+        
+        if flagged_by_baseline:
+            login_rate = float(today_df.iloc[0]['login_success_rate']) if 'login_success_rate' in today_df.columns else None
+            primary_type, all_types, desc = DetectionService.classify_attack(today_contributors, login_rate)
+            result["attack_type"] = primary_type
+            result["all_attack_types"] = all_types
+            result["attack_description"] = desc
+            result["top_contributors"] = today_contributors
+            result["num_flagged_features"] = today_flags
+            
+            if "DATA_THEFT" in all_types or "RANSOMWARE" in all_types:
+                result["verification"] = DetectionService.verify_data_theft(today_df.iloc[0]['date'], combined_df)
+            elif "ACCOUNT_TAKEOVER" in all_types or "BRUTE_FORCE" in all_types:
+                result["verification"] = DetectionService.verify_login(today_df.iloc[0]['date'], combined_df)
+        elif flagged_by_iso:
+            result["attack_type"] = "ISOLATION_ONLY"
+            result["all_attack_types"] = ["ISOLATION_ONLY"]
+            result["attack_description"] = "Isolation Forest detected anomaly but baseline did not confirm"
+            result["analyst_note"] = "Recommend further manual raw log investigation"
+        
+        return result
+    
+    @staticmethod
+    def get_historical(uid, days_back=30):
+        canonical_uid = DetectionService.get_canonical_uid(uid)
+        return get_historical_anomalies(canonical_uid, days_back)
+    
+    @staticmethod
+    def get_yesterday(uid):
+        canonical_uid = DetectionService.get_canonical_uid(uid)
+        return get_yesterdays_anomaly(canonical_uid)
+    
+    @staticmethod
+    def run_midnight_job():
+        yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).date()
+        results = {}
+        for user in ['alice', 'bob']:
+            results[user] = DetectionService.analyze_day(user, yesterday)
+        return results
