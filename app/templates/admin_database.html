@@ -3,463 +3,293 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Database Admin - UEBA Cloud</title>
+    <title>UEBA · Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f0f4f8;
-            color: #1a2a3a;
+            background: #eef2f7;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #0a1c2a;
+            line-height: 1.45;
+            -webkit-font-smoothing: antialiased;
         }
 
         .header {
-            background: #2c7da0;
-            color: white;
-            padding: 16px 24px;
+            background: #ffffff;
+            border-bottom: 2px solid #dce5ec;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
-
-        .header h1 {
-            font-size: 20px;
-            font-weight: 600;
-        }
-
-        .header a {
-            color: white;
-            text-decoration: none;
-            padding: 6px 12px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 6px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 24px auto;
-            padding: 0 24px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-
-        .stat-card {
-            background: white;
+        .logo { display: flex; align-items: center; gap: 0.75rem; }
+        .logo-icon {
+            width: 42px; height: 42px;
+            background: linear-gradient(135deg, #1a5a7a, #2c7da0);
             border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
+        .logo-icon span { color: white; font-size: 1.3rem; font-weight: 700; }
+        .logo-text .primary { font-size: 1.4rem; font-weight: 800; color: #1a5a7a; letter-spacing: -0.3px; }
+        .logo-text .secondary { font-size: 0.6rem; font-weight: 600; color: #8aaec2; letter-spacing: 0.5px; text-transform: uppercase; }
 
-        .stat-card h3 {
-            font-size: 14px;
-            color: #6c86a0;
-            margin-bottom: 8px;
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: #f0f4f8;
+            padding: 0.3rem 0.3rem 0.3rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid #dce5ec;
         }
-
-        .stat-card .number {
-            font-size: 32px;
-            font-weight: 700;
-            color: #2c7da0;
-        }
-
-        .main-layout {
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 24px;
-        }
-
-        .sidebar {
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            overflow: hidden;
-        }
-
-        .sidebar-header {
-            background: #f8fafc;
-            padding: 16px;
+        .user-name { font-size: 0.85rem; font-weight: 600; color: #1a5a7a; }
+        .btn-logout {
+            background: #e2edf2;
+            border: none;
+            border-radius: 2rem;
+            padding: 0.45rem 1.3rem;
+            font-size: 0.75rem;
             font-weight: 600;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .table-list {
-            list-style: none;
-        }
-
-        .table-list li {
-            padding: 12px 16px;
-            border-bottom: 1px solid #e2e8f0;
+            color: #1a5a7a;
             cursor: pointer;
             transition: all 0.2s;
         }
+        .btn-logout:hover { background: #d0e0e8; transform: translateY(-1px); }
 
-        .table-list li:hover {
-            background: #f0f4f8;
+        .container { max-width: 1280px; margin: 0 auto; padding: 2rem; }
+
+        .card {
+            background: #ffffff;
+            border: 1px solid #dce5ec;
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
         }
-
-        .table-list li.active {
-            background: #e8f4f8;
-            color: #2c7da0;
-            font-weight: 500;
-            border-left: 3px solid #2c7da0;
+        .card-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #8aaec2;
+            margin-bottom: 1.25rem;
         }
+        .stat-grid { display: flex; gap: 2rem; flex-wrap: wrap; }
+        .stat-item { flex: 1; }
+        .stat-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: #8aaec2; margin-bottom: 0.25rem; }
+        .stat-number { font-size: 1.5rem; font-weight: 700; color: #1a5a7a; }
 
-        .content {
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            overflow: hidden;
-        }
-
-        .content-header {
-            background: #f8fafc;
-            padding: 16px 20px;
-            border-bottom: 1px solid #e2e8f0;
+        .table-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
-
-        .content-header h2 {
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .refresh-btn {
-            padding: 6px 12px;
-            background: #2c7da0;
-            color: white;
-            border: none;
-            border-radius: 6px;
+        .table-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #8aaec2; }
+        .table-controls { display: flex; gap: 0.75rem; align-items: center; }
+        .table-controls select {
+            background: white;
+            border: 1px solid #dce5ec;
+            border-radius: 2rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            color: #1a5a7a;
             cursor: pointer;
         }
-
-        .table-wrapper {
-            overflow-x: auto;
-            max-height: 600px;
-            overflow-y: auto;
+        .table-controls button {
+            background: #1a5a7a;
+            border: none;
+            border-radius: 2rem;
+            padding: 0.5rem 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
         }
+        .table-controls button:hover { background: #2c7da0; transform: translateY(-1px); }
 
-        table {
+        .table-wrapper { overflow-x: auto; }
+        .data-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
+            background: #ffffff;
+            border: 1px solid #dce5ec;
+            border-radius: 1rem;
+            overflow: hidden;
+            font-size: 0.8rem;
         }
-
-        th {
-            background: #f8fafc;
-            padding: 12px;
+        .data-table th {
             text-align: left;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #e2e8f0;
-            vertical-align: top;
-        }
-
-        tr:hover {
+            padding: 0.9rem 1rem;
             background: #f8fafc;
+            font-weight: 700;
+            color: #1a5a7a;
+            border-bottom: 1px solid #dce5ec;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-
-        .delete-btn {
-            padding: 4px 8px;
-            background: #fee;
-            color: #c0392b;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 11px;
-        }
-
-        .delete-btn:hover {
-            background: #fdd;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #6c86a0;
-        }
-
-        .activity-list {
-            margin-top: 24px;
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            padding: 16px;
-        }
-
-        .activity-list h3 {
-            margin-bottom: 12px;
-            font-size: 16px;
-        }
-
-        .activity-item {
-            padding: 8px 0;
-            border-bottom: 1px solid #e2e8f0;
-            font-size: 13px;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 2px 8px;
-            background: #e8f4f8;
-            color: #2c7da0;
-            border-radius: 4px;
-            font-size: 11px;
+        .data-table td {
+            padding: 0.9rem 1rem;
+            border-bottom: 1px solid #eef2f7;
+            color: #2c4e6e;
             font-weight: 500;
         }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover td { background: #fafcfd; }
+
+        .btn-danger {
+            background: #fee6e3;
+            border: none;
+            color: #b33c2a;
+            padding: 0.35rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-danger:hover { background: #fdd8d4; transform: translateY(-1px); }
+
+        .empty-message { text-align: center; padding: 2rem; color: #a9c0cf; font-size: 0.85rem; font-weight: 500; }
+        .access-denied { text-align: center; padding: 2.5rem; background: white; border-radius: 1rem; margin: 1rem; border: 1px solid #dce5ec; }
+        .access-denied h1 { font-size: 1.2rem; color: #b33c2a; margin-bottom: 0.5rem; }
 
         @media (max-width: 768px) {
-            .main-layout {
-                grid-template-columns: 1fr;
-            }
+            .container { padding: 1rem; }
+            .stat-grid { flex-direction: column; gap: 1rem; }
+            .table-header { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Database Administration Panel</h1>
-        <a href="/dashboard">Back to Dashboard</a>
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon"><span>☁</span></div>
+                <div class="logo-text"><div class="primary">UEBA</div><div class="secondary">cloud storage</div></div>
+            </div>
+            <div class="user-info">
+                <span class="user-name" id="username"></span>
+                <button class="btn-logout" onclick="logout()">Sign out</button>
+            </div>
+        </div>
     </div>
 
     <div class="container">
-        <div class="stats-grid" id="stats-grid">
-            <div class="stat-card">
-                <h3>Loading...</h3>
-                <div class="number">-</div>
-            </div>
-        </div>
-
-        <div class="main-layout">
-            <div class="sidebar">
-                <div class="sidebar-header">Tables</div>
-                <ul class="table-list" id="table-list">
-                    <li style="padding: 20px; text-align: center; color: #6c86a0;">Loading...</li>
-                </ul>
-            </div>
-
-            <div class="content">
-                <div class="content-header">
-                    <h2 id="current-table">Select a table</h2>
-                    <button class="refresh-btn" onclick="loadCurrentTable()">Refresh</button>
-                </div>
-                <div class="table-wrapper" id="table-content">
-                    <div class="loading">Select a table from the left</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="activity-list" id="activity-list">
-            <h3>Recent Activity (Last 24 Hours)</h3>
-            <div class="loading">Loading...</div>
-        </div>
+        <div id="stats-container"></div>
+        <div id="admin-container"></div>
     </div>
 
     <script>
         const token = localStorage.getItem('token');
-        if (!token) {
-            window.location.href = '/login-page';
+        const role = localStorage.getItem('role');
+        if (!token) window.location.href = '/login-page';
+        document.getElementById('username').innerText = localStorage.getItem('user') || 'User';
+
+        if (role !== 'admin') {
+            document.getElementById('stats-container').innerHTML = '';
+            document.getElementById('admin-container').innerHTML = `<div class="access-denied"><h1>Access denied</h1><p>Administrator privileges required.</p><a href="/dashboard" style="color:#1a5a7a; font-weight:600;">← Back to Dashboard</a></div>`;
+        } else {
+            initAdmin();
         }
 
-        let currentTable = null;
+        async function apiCall(url, options = {}) {
+            const r = await fetch(url, { ...options, headers: { ...options.headers, 'Authorization': 'Bearer ' + token } });
+            if (!r.ok) throw new Error(r.status);
+            return r.json();
+        }
 
         async function loadStats() {
+            const container = document.getElementById('stats-container');
+            container.innerHTML = '<div class="empty-message">Loading...</div>';
             try {
-                const response = await fetch('/admin/api/stats', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-                
-                const statsGrid = document.getElementById('stats-grid');
-                statsGrid.innerHTML = Object.entries(data.counts).map(([table, count]) => `
-                    <div class="stat-card">
-                        <h3>${table.toUpperCase()}</h3>
-                        <div class="number">${count}</div>
+                const data = await apiCall('/admin/api/stats');
+                let html = `<div class="card"><div class="card-title">Database statistics</div><div class="stat-grid">`;
+                for (const [table, count] of Object.entries(data.counts)) {
+                    html += `<div class="stat-item"><div class="stat-label">${table.toUpperCase()}</div><div class="stat-number">${count}</div></div>`;
+                }
+                html += `</div></div>`;
+                container.innerHTML = html;
+            } catch(e) { container.innerHTML = '<div class="empty-message">Error loading stats</div>'; }
+        }
+
+        window.deleteRecord = async function(table, id) {
+            if (!confirm(`Delete record ${id} from ${table}?`)) return;
+            try {
+                const r = await fetch(`/admin/api/table/${table}/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+                const result = await r.json();
+                if (result.success) { alert('Deleted'); loadStats(); loadTableData(); }
+                else alert('Error: ' + result.error);
+            } catch(e) { alert('Error'); }
+        };
+
+        async function loadTableData() {
+            const table = document.getElementById('table-select').value;
+            const container = document.getElementById('table-data');
+            container.innerHTML = '<div class="empty-message">Loading...</div>';
+            try {
+                const data = await apiCall(`/admin/api/table/${table}`);
+                if (!data.data || data.data.length === 0) { container.innerHTML = '<div class="empty-message">No records found</div>'; return; }
+                let html = `<div class="table-wrapper"><table class="data-table"><thead><tr>`;
+                for (const col of data.columns) html += `<th>${col.name}</th>`;
+                html += `<th>Action</th></tr></thead><tbody>`;
+                for (const row of data.data) {
+                    html += `<tr>`;
+                    for (const col of data.columns) {
+                        let val = row[col.name];
+                        if (val && typeof val === 'string' && val.length > 60) val = val.substring(0,57)+'...';
+                        html += `<td title="${row[col.name]||''}">${val !== null && val !== undefined ? String(val).substring(0,60) : '-'}</td>`;
+                    }
+                    html += `<td><button class="btn-danger" onclick="deleteRecord('${table}', ${row.id})">Delete</button></td>`;
+                    html += `</tr>`;
+                }
+                html += `</tbody></table></div>`;
+                container.innerHTML = html;
+            } catch(e) { container.innerHTML = '<div class="empty-message">Error loading table data</div>'; }
+        }
+
+        function initAdmin() {
+            document.getElementById('admin-container').innerHTML = `
+                <div class="card">
+                    <div class="card-title">Database tables</div>
+                    <div class="table-header">
+                        <div class="table-title">Browse data</div>
+                        <div class="table-controls">
+                            <select id="table-select"><option value="users">Users</option><option value="logs">Logs</option><option value="files">Files</option><option value="shares">Shares</option></select>
+                            <button onclick="loadTableData()">Load data</button>
+                        </div>
                     </div>
-                `).join('');
-                
-                // Load activity
-                const activityList = document.getElementById('activity-list');
-                if (data.recent_activity && data.recent_activity.length > 0) {
-                    activityList.innerHTML = `
-                        <h3>Recent Activity (Last 24 Hours)</h3>
-                        ${data.recent_activity.map(activity => `
-                            <div class="activity-item">
-                                <span class="badge">${activity.count}</span>
-                                <span style="margin-left: 8px;">${activity.type}</span>
-                            </div>
-                        `).join('')}
-                    `;
-                } else {
-                    activityList.innerHTML = '<h3>Recent Activity (Last 24 Hours)</h3><div class="loading">No activity in last 24 hours</div>';
-                }
-            } catch (error) {
-                console.error('Error loading stats:', error);
-            }
+                    <div id="table-data"></div>
+                </div>
+            `;
+            loadStats();
+            loadTableData();
         }
 
-        async function loadTables() {
-            try {
-                const response = await fetch('/admin/api/tables', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-                
-                const tableList = document.getElementById('table-list');
-                tableList.innerHTML = data.tables.map(table => `
-                    <li onclick="selectTable('${table}')">${table}</li>
-                `).join('');
-            } catch (error) {
-                console.error('Error loading tables:', error);
-            }
+        async function logout() {
+            await fetch('/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
+            localStorage.clear();
+            window.location.href = '/login-page';
         }
-
-        async function selectTable(tableName) {
-            currentTable = tableName;
-            
-            // Update active state
-            document.querySelectorAll('.table-list li').forEach(li => {
-                li.classList.remove('active');
-                if (li.textContent === tableName) {
-                    li.classList.add('active');
-                }
-            });
-            
-            document.getElementById('current-table').innerText = tableName;
-            await loadTableData(tableName);
-        }
-
-        async function loadTableData(tableName) {
-            const container = document.getElementById('table-content');
-            container.innerHTML = '<div class="loading">Loading...</div>';
-            
-            try {
-                const response = await fetch(`/admin/api/table/${tableName}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-                
-                if (data.data.length === 0) {
-                    container.innerHTML = '<div class="loading">No data in this table</div>';
-                    return;
-                }
-                
-                // Check if table has id column for delete
-                const hasIdColumn = data.columns.some(col => col.name === 'id');
-                
-                container.innerHTML = `
-                    <table>
-                        <thead>
-                            <tr>
-                                ${data.columns.map(col => `<th>${col.name}</th>`).join('')}
-                                ${hasIdColumn ? '<th>Actions</th>' : ''}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${data.data.map(row => `
-                                <tr>
-                                    ${data.columns.map(col => `
-                                        <td title="${col.type}">${truncate(row[col.name], 100)}</td>
-                                    `).join('')}
-                                    ${hasIdColumn ? `
-                                        <td>
-                                            <button class="delete-btn" onclick="deleteRecord('${tableName}', ${row.id})">Delete</button>
-                                        </td>
-                                    ` : ''}
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                    <div style="padding: 12px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 12px; color: #6c86a0;">
-                        Showing ${data.data.length} records
-                    </div>
-                `;
-            } catch (error) {
-                console.error('Error loading table data:', error);
-                container.innerHTML = '<div class="loading">Error loading table data</div>';
-            }
-        }
-
-        async function loadCurrentTable() {
-            if (currentTable) {
-                await loadTableData(currentTable);
-            }
-        }
-
-        async function deleteRecord(tableName, recordId) {
-            if (!confirm(`Delete record ${recordId} from ${tableName}? This action cannot be undone.`)) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/admin/api/table/${tableName}/${recordId}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert('Record deleted successfully');
-                    loadStats();
-                    loadTableData(tableName);
-                } else {
-                    alert('Error deleting record: ' + result.error);
-                }
-            } catch (error) {
-                console.error('Error deleting record:', error);
-                alert('Error deleting record');
-            }
-        }
-
-        function truncate(str, maxLength) {
-            if (!str) return '-';
-            const string = String(str);
-            if (string.length <= maxLength) return string;
-            return string.substring(0, maxLength) + '...';
-        }
-
-        // Auto-refresh every 10 seconds
-        let refreshInterval;
-        
-        function startAutoRefresh() {
-            refreshInterval = setInterval(() => {
-                loadStats();
-                if (currentTable) {
-                    loadTableData(currentTable);
-                }
-            }, 10000);
-        }
-        
-        function stopAutoRefresh() {
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
-            }
-        }
-
-        // Initialize
-        loadStats();
-        loadTables();
-        startAutoRefresh();
-        
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', stopAutoRefresh);
     </script>
 </body>
 </html>

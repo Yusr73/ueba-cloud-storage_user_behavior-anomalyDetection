@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UEBA · Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #eef2f7;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #0a1c2a;
+            line-height: 1.45;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .header {
+            background: #ffffff;
+            border-bottom: 2px solid #dce5ec;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .logo { display: flex; align-items: center; gap: 0.75rem; }
+        .logo-icon {
+            width: 42px; height: 42px;
+            background: linear-gradient(135deg, #1a5a7a, #2c7da0);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .logo-icon span { color: white; font-size: 1.3rem; font-weight: 700; }
+        .logo-text .primary { font-size: 1.4rem; font-weight: 800; color: #1a5a7a; letter-spacing: -0.3px; }
+        .logo-text .secondary { font-size: 0.6rem; font-weight: 600; color: #8aaec2; letter-spacing: 0.5px; text-transform: uppercase; }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: #f0f4f8;
+            padding: 0.3rem 0.3rem 0.3rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid #dce5ec;
+        }
+        .user-name { font-size: 0.85rem; font-weight: 600; color: #1a5a7a; }
+        .btn-logout {
+            background: #e2edf2;
+            border: none;
+            border-radius: 2rem;
+            padding: 0.45rem 1.3rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1a5a7a;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-logout:hover { background: #d0e0e8; transform: translateY(-1px); }
+
+        .container { max-width: 1280px; margin: 0 auto; padding: 2rem; }
+
+        .control-bar {
+            background: #ffffff;
+            border: 1px solid #dce5ec;
+            border-radius: 1rem;
+            padding: 0.7rem 1.2rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .control-group {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .btn-outline {
+            background: #f0f4f8;
+            border: 1px solid #dce5ec;
+            border-radius: 2rem;
+            padding: 0.4rem 1.2rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1a5a7a;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-outline:hover { background: #e8eef3; transform: translateY(-1px); }
+        .btn-primary {
+            background: #1a5a7a;
+            border: none;
+            border-radius: 2rem;
+            padding: 0.4rem 1.2rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover { background: #2c7da0; transform: translateY(-1px); }
+        .status-text { font-size: 0.75rem; color: #8aaec2; font-weight: 500; }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #dce5ec;
+            padding-bottom: 0.5rem;
+        }
+        .tab {
+            background: none;
+            border: none;
+            padding: 0.5rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #8aaec2;
+            cursor: pointer;
+            border-radius: 2rem;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: #1a5a7a; background: #f0f6fa; }
+        .tab.active { color: #1a5a7a; background: #f0f6fa; }
+
+        .card {
+            background: #ffffff;
+            border: 1px solid #dce5ec;
+            border-radius: 1.25rem;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #eef2f7;
+            background: #fafcfd;
+        }
+        .card-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #8aaec2;
+        }
+        .card-title strong {
+            color: #1a5a7a;
+            font-weight: 800;
+        }
+        .card-body {
+            padding: 1.25rem 1.5rem;
+        }
+
+        .stat-grid { display: flex; gap: 2rem; flex-wrap: wrap; }
+        .stat-item { flex: 1; min-width: 120px; }
+        .stat-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: #8aaec2; margin-bottom: 0.25rem; }
+        .stat-number { font-size: 1.25rem; font-weight: 700; color: #1a5a7a; }
+        .stat-number-small { font-size: 0.9rem; font-weight: 600; color: #1a5a7a; }
+
+        .badge-group { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+        .table-wrapper { overflow-x: auto; }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+        }
+        .data-table th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            background: #f8fafc;
+            font-weight: 600;
+            color: #5e7e96;
+            border-bottom: 1px solid #eef2f7;
+        }
+        .data-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #eef2f7;
+            color: #2c4e6e;
+        }
+        .data-table tr:hover td { background: #fafcfd; }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 2rem;
+            font-size: 0.65rem;
+            font-weight: 600;
+        }
+        .badge-data-theft { background: #fee6e3; color: #b33c2a; }
+        .badge-directory { background: #eee5fc; color: #5e3a8c; }
+        .badge-login { background: #e2edfa; color: #2a6d9c; }
+        .badge-off-hours { background: #ddf3f0; color: #2a6e6a; }
+        .badge-unknown { background: #eef2f5; color: #5e7e96; }
+        .badge-success { background: #e0f0ea; color: #2a7a5c; }
+        .badge-warning { background: #fef3e0; color: #c9771e; }
+        .badge-info { background: #e2edfa; color: #2a6d9c; }
+        .badge-isolation-only { background: #fef3e0; color: #c9771e; }
+        .badge-ransomware { background: #dc2626; color: white; }
+        .badge-account-takeover { background: #7c3aed; color: white; }
+        .badge-brute-force { background: #d97706; color: white; }
+        .badge-mass-deletion { background: #ea580c; color: white; }
+
+        .confidence-high { background: #1a5a7a; color: white; padding: 0.2rem 0.6rem; border-radius: 2rem; font-size: 0.65rem; display: inline-block; }
+        .confidence-medium { background: #e6a157; color: white; padding: 0.2rem 0.6rem; border-radius: 2rem; font-size: 0.65rem; display: inline-block; }
+        .confidence-low { background: #b33c2a; color: white; padding: 0.2rem 0.6rem; border-radius: 2rem; font-size: 0.65rem; display: inline-block; }
+
+        .alert-item {
+            background: #fafcfd;
+            border-left: 3px solid #1a5a7a;
+            padding: 0.7rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.375rem;
+            border: 1px solid #eef2f7;
+        }
+        .alert-time { font-size: 0.65rem; color: #8aaec2; margin-bottom: 0.2rem; }
+        .alert-type { font-weight: 700; font-size: 0.75rem; color: #1a3a4a; margin-bottom: 0.2rem; }
+        .alert-detail { font-size: 0.7rem; color: #5e7e96; }
+
+        .empty-message { text-align: center; padding: 2rem; color: #a9c0cf; font-size: 0.8rem; }
+        .divider { height: 1px; background: #eef2f7; margin: 1rem 0; }
+        .access-denied { text-align: center; padding: 2.5rem; background: white; border-radius: 1rem; border: 1px solid #dce5ec; }
+        .access-denied h1 { font-size: 1.2rem; color: #b33c2a; margin-bottom: 0.5rem; }
+
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .stat-grid { flex-direction: column; gap: 1rem; }
+            .control-bar { flex-direction: column; align-items: stretch; }
+            .control-group { justify-content: space-between; }
+            .card-body { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon"><span>☁</span></div>
+                <div class="logo-text"><div class="primary">UEBA</div><div class="secondary">detection</div></div>
+            </div>
+            <div class="user-info">
+                <span class="user-name" id="username"></span>
+                <button class="btn-logout" onclick="logout()">Sign out</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="control-bar">
+            <div class="control-group">
+                <button id="analyzeTodayBtn" class="btn-primary">Analyze Today</button>
+                <button id="refreshBtn" class="btn-outline">Refresh</button>
+            </div>
+            <div class="control-group">
+                <span id="statusText" class="status-text">Ready</span>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-user="alice">Alice</button>
+            <button class="tab" data-user="bob">Bob</button>
+        </div>
+
+        <div id="alicePanel">
+            <!-- Real-Time Alerts Panel -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><strong>Real-Time</strong> · Sliding Window Alerts</div>
+                </div>
+                <div class="card-body" id="realtime-alice">
+                    <div class="empty-message">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Today Cumulative -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><strong>Today</strong> · Cumulative Analysis</div>
+                </div>
+                <div class="card-body" id="today-alice">
+                    <div class="empty-message">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Yesterday -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><strong>Yesterday</strong> · Final Analysis</div>
+                </div>
+                <div class="card-body" id="yesterday-alice">
+                    <div class="empty-message">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Historical Table -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><strong>Historical</strong> · Previous Detections</div>
+                </div>
+                <div class="card-body" id="historical-alice">
+                    <div class="empty-message">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="bobPanel" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><strong>Real-Time</strong> · Sliding Window Alerts</div>
+                </div>
+                <div class="card-body" id="realtime-bob">
+                    <div class="empty-message">Loading...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><strong>Today</strong> · Cumulative Analysis</div>
+                </div>
+                <div class="card-body" id="today-bob">
+                    <div class="empty-message">Loading...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><strong>Yesterday</strong> · Final Analysis</div>
+                </div>
+                <div class="card-body" id="yesterday-bob">
+                    <div class="empty-message">Loading...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><strong>Historical</strong> · Previous Detections</div>
+                </div>
+                <div class="card-body" id="historical-bob">
+                    <div class="empty-message">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+        
+        if (!token) window.location.href = '/login-page';
+        document.getElementById('username').innerText = localStorage.getItem('user') || 'Admin';
+        
+        if (role !== 'admin') {
+            document.body.innerHTML = '<div class="container"><div class="access-denied"><h1>Access Denied</h1><p>Admin privileges required.</p></div></div>';
+        }
+
+        let currentUser = 'alice';
+
+        function formatDate(d) { return d ? new Date(d).toLocaleDateString() : '—'; }
+        function formatTime(ts) { return ts ? new Date(ts).toLocaleTimeString() : '—'; }
+
+        function getBadgeClass(t) {
+            if (!t || t === 'NONE') return 'badge-unknown';
+            if (t === 'DATA_THEFT') return 'badge-data-theft';
+            if (t === 'RANSOMWARE') return 'badge-ransomware';
+            if (t === 'RANSOMWARE_BEHAVIOR') return 'badge-ransomware';
+            if (t === 'ACCOUNT_TAKEOVER') return 'badge-account-takeover';
+            if (t === 'BRUTE_FORCE') return 'badge-brute-force';
+            if (t === 'DIRECTORY_TRAVERSAL') return 'badge-directory';
+            if (t === 'LOGIN_ACTIVITY') return 'badge-login';
+            if (t === 'OFF_HOURS') return 'badge-off-hours';
+            if (t === 'ISOLATION_ONLY') return 'badge-isolation-only';
+            if (t === 'MASS_ACTIVITY') return 'badge-warning';
+            if (t === 'MASS_DELETION') return 'badge-mass-deletion';
+            if (t === 'file_written') return 'badge-ransomware';
+            if (t === 'file_deleted') return 'badge-mass-deletion';
+            if (t === 'file_created') return 'badge-warning';
+            if (t === 'account_takeover') return 'badge-account-takeover';
+            return 'badge-unknown';
+        }
+
+        function getConfidenceClass(c) {
+            if (c === 'HIGH') return 'confidence-high';
+            if (c === 'MEDIUM') return 'confidence-medium';
+            return 'confidence-low';
+        }
+
+        async function apiCall(url, options = {}) {
+            const r = await fetch(url, {
+                ...options,
+                headers: { ...options.headers, 'Authorization': 'Bearer ' + token }
+            });
+            if (r.status === 401) { localStorage.clear(); window.location.href = '/login-page'; }
+            return r.json();
+        }
+
+        // Load Real-Time Alerts
+        async function loadRealtime(displayName) {
+            try {
+                const alerts = await apiCall(`/admin/detection/realtime/alerts?user_id=${displayName}&hours=24`);
+                
+                if (!alerts || alerts.length === 0) {
+                    return `<div class="empty-message">No real-time alerts in the last 24 hours</div>`;
+                }
+                
+                let html = '';
+                for (const alert of alerts.slice(0, 15)) {
+                    let alertName = alert.event_type;
+                    let alertClass = getBadgeClass(alert.event_type);
+                    
+                    if (alert.event_type === 'file_written') alertName = 'Ransomware (writes per minute)';
+                    if (alert.event_type === 'file_deleted') alertName = 'Mass Deletion (deletes per 5 min)';
+                    if (alert.event_type === 'file_created') alertName = 'Malicious Upload (creates per 5 min)';
+                    if (alert.event_type === 'account_takeover') alertName = 'Account Takeover (accesses after login)';
+                    
+                    html += `
+                        <div class="alert-item">
+                            <div class="alert-time">${formatTime(alert.detected_at)}</div>
+                            <div class="alert-type"><span class="badge ${alertClass}">${alertName}</span></div>
+                            <div class="alert-detail">${alert.count_value} events · Threshold: ${alert.threshold_value} · Multiplier: ×${alert.multiplier}</div>
+                        </div>
+                    `;
+                }
+                return html;
+            } catch (error) {
+                console.error('Realtime error:', error);
+                return `<div class="empty-message">Error loading real-time alerts</div>`;
+            }
+        }
+
+        // Load Today Cumulative
+        async function loadToday(displayName) {
+            try {
+                const data = await apiCall(`/admin/detection/today/cumulative/${displayName}`);
+                
+                if (!data.has_data) {
+                    return `<div class="empty-message">No activity recorded today yet</div>`;
+                }
+                
+                let flaggedHtml = '';
+                if (data.flagged) {
+                    let allTypesHtml = '';
+                    if (data.all_attack_types && data.all_attack_types.length > 0) {
+                        allTypesHtml = `
+                            <div class="stat-item">
+                                <div class="stat-label">All Types</div>
+                                <div class="badge-group">
+                                    ${data.all_attack_types.map(t => `<span class="badge ${getBadgeClass(t)}">${t}</span>`).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    flaggedHtml = `
+                        <div class="stat-grid" style="margin-top: 1rem;">
+                            <div class="stat-item">
+                                <div class="stat-label">Primary Attack</div>
+                                <div><span class="badge ${getBadgeClass(data.attack_type)}">${data.attack_type || 'Unknown'}</span></div>
+                            </div>
+                            ${allTypesHtml}
+                            <div class="stat-item">
+                                <div class="stat-label">Baseline Score</div>
+                                <div class="stat-number-small">${data.baseline_score?.toFixed(2) || '0'}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Isolation Forest</div>
+                                <div class="stat-number-small">${data.flagged_by_isolation ? 'Flagged' : 'Clean'}</div>
+                            </div>
+                        </div>
+                        ${data.verification ? `<div class="divider"></div><div style="font-size:0.7rem; color:#5e7e96;">${data.verification}</div>` : ''}
+                        ${data.analyst_note ? `<div style="margin-top:0.5rem; font-size:0.7rem; color:#c9771e;">${data.analyst_note}</div>` : ''}
+                    `;
+                }
+                
+                return `
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Cumulative Until</div>
+                            <div class="stat-number-small">${formatTime(data.cumulative_until)}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Events Today</div>
+                            <div class="stat-number">${data.total_events || 0}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Status</div>
+                            <div><span class="badge ${data.flagged ? 'badge-data-theft' : 'badge-success'}">${data.flagged ? 'Flagged' : 'Clean'}</span></div>
+                        </div>
+                    </div>
+                    ${flaggedHtml}
+                `;
+            } catch (error) {
+                console.error('Today error:', error);
+                return `<div class="empty-message">Error loading today's data</div>`;
+            }
+        }
+
+        // Load Yesterday
+        async function loadYesterday(displayName) {
+            try {
+                const data = await apiCall(`/admin/detection/yesterday/${displayName}`);
+                
+                if (!data.analyzed) {
+                    return `<div class="empty-message">No anomalies detected - day was clean</div>`;
+                }
+                
+                return `
+                    <div class="stat-grid">
+                        <div class="stat-item"><div class="stat-label">Date</div><div class="stat-number-small">${formatDate(data.date)}</div></div>
+                        <div class="stat-item"><div class="stat-label">Attack Type</div><div><span class="badge ${getBadgeClass(data.attack_type)}">${data.attack_type || 'None'}</span></div></div>
+                        <div class="stat-item"><div class="stat-label">Confidence</div><div><span class="${getConfidenceClass(data.confidence)}">${data.confidence || 'LOW'}</span></div></div>
+                        <div class="stat-item"><div class="stat-label">Score</div><div class="stat-number-small">${data.baseline_score?.toFixed(2) || '0'}</div></div>
+                    </div>
+                    ${data.analyst_notes ? `<div class="divider"></div><div style="font-size:0.7rem;">${data.analyst_notes}</div>` : ''}
+                `;
+            } catch (error) {
+                console.error('Yesterday error:', error);
+                return `<div class="empty-message">Error loading yesterday's data</div>`;
+            }
+        }
+
+        // Load Historical
+        async function loadHistorical(displayName) {
+            try {
+                const data = await apiCall(`/admin/detection/history/${displayName}?days_back=30`);
+                
+                if (!data || data.length === 0) {
+                    return `<div class="empty-message">No historical anomalies recorded</div>`;
+                }
+                
+                let html = `<div class="table-wrapper"><table class="data-table"><thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Primary Attack</th>
+                        <th>All Types</th>
+                        <th>Confidence</th>
+                        <th>Score</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead><tbody>`;
+                
+                for (const row of data) {
+                    let allTypesHtml = '';
+                    let notesContent = row.analyst_notes || '—';
+                    
+                    const bracketMatch = notesContent.match(/\[([^\]]+)\]/);
+                    if (bracketMatch) {
+                        const types = bracketMatch[1].split(' + ');
+                        allTypesHtml = `<div class="badge-group">${types.map(t => `<span class="badge ${getBadgeClass(t)}">${t}</span>`).join('')}</div>`;
+                        notesContent = notesContent.replace(/\[[^\]]+\]\s*/, '');
+                    } else if (row.attack_type && row.attack_type !== 'NONE') {
+                        allTypesHtml = `<span class="badge ${getBadgeClass(row.attack_type)}">${row.attack_type}</span>`;
+                    } else {
+                        allTypesHtml = '<span class="badge badge-unknown">—</span>';
+                    }
+                    
+                    html += `<tr>
+                        <td>${formatDate(row.date)}</span></td>
+                        <td><span class="badge ${getBadgeClass(row.attack_type)}">${row.attack_type || 'Unknown'}</span></td>
+                        <td>${allTypesHtml}</td>
+                        <td><span class="${getConfidenceClass(row.confidence)}">${row.confidence || 'LOW'}</span></td>
+                        <td>${row.baseline_score?.toFixed(2) || '0'}</td>
+                        <td style="max-width: 250px; font-size: 0.7rem;">${notesContent.substring(0, 80)}${notesContent.length > 80 ? '...' : ''}</td>
+                    </tr>`;
+                }
+                
+                html += `</tbody></table></div>`;
+                return html;
+            } catch (error) {
+                console.error('Historical error:', error);
+                return `<div class="empty-message">Error loading historical data</div>`;
+            }
+        }
+
+        async function loadUserData(displayName) {
+            const statusSpan = document.getElementById('statusText');
+            statusSpan.innerText = 'Loading...';
+            
+            const [realtimeHtml, todayHtml, yesterdayHtml, historicalHtml] = await Promise.all([
+                loadRealtime(displayName),
+                loadToday(displayName),
+                loadYesterday(displayName),
+                loadHistorical(displayName)
+            ]);
+            
+            document.getElementById(`realtime-${displayName}`).innerHTML = realtimeHtml;
+            document.getElementById(`today-${displayName}`).innerHTML = todayHtml;
+            document.getElementById(`yesterday-${displayName}`).innerHTML = yesterdayHtml;
+            document.getElementById(`historical-${displayName}`).innerHTML = historicalHtml;
+            
+            statusSpan.innerText = `Updated at ${new Date().toLocaleTimeString()}`;
+        }
+
+        async function triggerTodayAnalysis() {
+            const statusSpan = document.getElementById('statusText');
+            statusSpan.innerText = 'Analyzing today...';
+            await apiCall('/admin/detection/today/trigger', { method: 'POST' });
+            await loadUserData(currentUser);
+            statusSpan.innerText = `Updated at ${new Date().toLocaleTimeString()}`;
+        }
+
+        function switchUser(user) {
+            currentUser = user;
+            document.getElementById('alicePanel').style.display = user === 'alice' ? 'block' : 'none';
+            document.getElementById('bobPanel').style.display = user === 'bob' ? 'block' : 'none';
+            document.querySelectorAll('.tab').forEach(btn => {
+                if (btn.getAttribute('data-user') === user) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+            loadUserData(user);
+        }
+
+        function startAutoRefresh() {
+            if (window.refreshInterval) clearInterval(window.refreshInterval);
+            window.refreshInterval = setInterval(() => {
+                loadUserData(currentUser);
+            }, 30000);
+        }
+
+        async function logout() {
+            await fetch('/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
+            localStorage.clear();
+            window.location.href = '/login-page';
+        }
+
+        document.getElementById('analyzeTodayBtn').addEventListener('click', triggerTodayAnalysis);
+        document.getElementById('refreshBtn').addEventListener('click', () => loadUserData(currentUser));
+        document.querySelectorAll('.tab').forEach(btn => {
+            btn.addEventListener('click', () => switchUser(btn.getAttribute('data-user')));
+        });
+
+        startAutoRefresh();
+        loadUserData('alice');
+    </script>
+</body>
+</html>

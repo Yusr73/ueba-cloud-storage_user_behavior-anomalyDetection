@@ -68,7 +68,6 @@ async def rename_file(
     new_filename: str,
     current_user = Depends(get_current_user)
 ):
-    # Utiliser le controller, pas faire le renommage ici
     success, message = FileController.rename_file(old_filename, new_filename, current_user)
     if not success:
         raise HTTPException(status_code=404, detail=message)
@@ -118,7 +117,7 @@ async def download_file(
     write_log(
         event_type="file_accessed",
         uid=current_user['uid'],
-        uid_type="uid",  # ← corrigé
+        uid_type="uid",
         params={"filename": filename, "size": os.path.getsize(filepath), "action": "download"},
         role=current_user['role'],
         is_local_ip=True,

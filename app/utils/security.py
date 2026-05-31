@@ -1,13 +1,14 @@
-import hashlib
+import bcrypt
 from datetime import datetime, timezone, timedelta
 from jose import jwt
 from config import Config
 
 def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode(), salt).decode()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return hash_password(plain_password) == hashed_password
+    return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
 
 def create_access_token(data: dict):
     to_encode = data.copy()

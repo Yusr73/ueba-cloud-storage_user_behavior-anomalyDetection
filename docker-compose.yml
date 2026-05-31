@@ -36,8 +36,8 @@ services:
         condition: service_healthy
     volumes:
       - ./app:/app
-      - uploads_data:/app/uploads
-      - logs_data:/app/logs
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
     networks:
       - ueba_network
 
@@ -53,8 +53,6 @@ services:
 
 volumes:
   postgres_data:
-  uploads_data:
-  logs_data:
 
 networks:
   ueba_network:
