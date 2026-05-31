@@ -1,5 +1,10 @@
 # UEBA Cloud Storage Platform
 
+
+<img width="1891" height="814" alt="image" src="https://github.com/user-attachments/assets/acf41944-3065-4216-81f7-f0ee1390d0f1" />
+
+
+
 ## Architecture
 
 Route -> Controller -> Service -> Model -> Database
