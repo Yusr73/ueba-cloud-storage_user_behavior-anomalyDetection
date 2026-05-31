@@ -48,6 +48,20 @@ Double stockage:
 - PostgreSQL: requetes SQL
 - logs.json: backup temps reel
 
+
+<img width="1648" height="700" alt="image" src="https://github.com/user-attachments/assets/d5eae21e-2a41-4dfd-ab28-65f08a4f28e9" />
+
+
+
+
+
+
+<img width="1562" height="863" alt="image" src="https://github.com/user-attachments/assets/a67ca12f-7932-45d7-8a00-745152ff77d0" />
+
+
+
+
+
 ## Detection d'anomalies
 
 ### Phase 1: Detection Journaliere (Batch)
@@ -95,6 +109,13 @@ Detection instantanee sur fenetres glissantes, declenchee a chaque ecriture de l
 - Utilisateur instable (Bob): seuil = historique_max x 3
 
 Le maximum historique est calcule sur les donnees de la table des logs. Les alertes sont stockees dans une table avec une fenetre glissante de sept jours.
+
+
+
+<img width="1589" height="847" alt="image" src="https://github.com/user-attachments/assets/1eba1b8f-82ff-4fea-97d9-dae7a9c7eec1" />
+
+
+
 
 ### Features Journalieres
 
