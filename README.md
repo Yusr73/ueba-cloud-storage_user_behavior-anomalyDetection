@@ -1,9 +1,6 @@
 # UEBA Cloud Storage Platform
 
-
 <img width="1891" height="814" alt="image" src="https://github.com/user-attachments/assets/acf41944-3065-4216-81f7-f0ee1390d0f1" />
-
-
 
 ## Architecture
 
@@ -48,19 +45,9 @@ Double stockage:
 - PostgreSQL: requetes SQL
 - logs.json: backup temps reel
 
-
 <img width="1648" height="700" alt="image" src="https://github.com/user-attachments/assets/d5eae21e-2a41-4dfd-ab28-65f08a4f28e9" />
 
-
-
-
-
-
 <img width="1562" height="863" alt="image" src="https://github.com/user-attachments/assets/a67ca12f-7932-45d7-8a00-745152ff77d0" />
-
-
-
-
 
 ## Detection d'anomalies
 
@@ -110,12 +97,7 @@ Detection instantanee sur fenetres glissantes, declenchee a chaque ecriture de l
 
 Le maximum historique est calcule sur les donnees de la table des logs. Les alertes sont stockees dans une table avec une fenetre glissante de sept jours.
 
-
-
 <img width="1589" height="847" alt="image" src="https://github.com/user-attachments/assets/1eba1b8f-82ff-4fea-97d9-dae7a9c7eec1" />
-
-
-
 
 ### Features Journalieres
 
@@ -241,6 +223,7 @@ Entrer PostgreSQL: docker exec -it ppp_postgres psql -U ueba_user -d ueba_db
     ├── uploads/              # Volume externe pour fichiers utilisateurs
     ├── docker-compose.yml    # Orchestration Docker
     └── README.md             # Documentation
+
 ## Scripts Disponibles
 
 - import_clue_logs.py: Importe le dataset CLUE
