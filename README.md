@@ -1,233 +1,136 @@
 # UEBA Cloud Storage Platform
 
-<img width="1891" height="814" alt="image" src="https://github.com/user-attachments/assets/acf41944-3065-4216-81f7-f0ee1390d0f1" />
+<img width="1891" height="814" alt="Dashboard" src="https://github.com/user-attachments/assets/acf41944-3065-4216-81f7-f0ee1390d0f1" />
 
-## Architecture
+## The problem
 
-Route -> Controller -> Service -> Model -> Database
+You cannot build a UEBA system on synthetic data.
 
-- routes: Endpoints HTTP
-- controllers: Logique metier + logs CLUE
-- services: Operations fichiers + detection
-- models: Acces PostgreSQL
-- utils: Logger, JWT, bcrypt
+Behavioral baselines require real, varied, long-duration activity. Generating fake user behavior produces fake anomalies, and a detector tuned on fabricated behavior detects nothing real. So this project was built in reverse: instead of inventing a system and bolting on logging, we started from a real dataset of CLUE-formatted audit logs (a Dropbox-replica's behavioral trace) and inferred the platform that would have produced them.
 
-## Technologies
+The cloud storage application exists because the logs describe it. The detection engine exists because the application needs real behavior to analyze.
 
-- Backend: FastAPI (Python 3.11)
-- Database: PostgreSQL 15
-- Frontend: HTML/CSS/JS + Jinja2
-- Container: Docker Compose
-- Auth: JWT (60 min)
-- Hash: bcrypt
-- Detection: Isolation Forest + Baseline probabiliste + Real-time sliding windows
+## The constraint that shaped everything
 
-## Logging CLUE
+The dataset contained raw logs only. It had:
 
-Table logs:
-- id, time, uid, uid_type, type, params, is_local_ip, role, location
+- **No ground-truth labels.** No annotations saying "this day was an attack."
+- **No peer groups.** No departments, roles, or behavioral clusters to compare users against.
 
-Types d'evenements:
-- file_accessed (voir/telecharger)
-- file_written (editer/sauvegarder)
-- file_created (nouveau fichier)
-- file_updated (remplacer/restaurer)
-- file_deleted (corbeille)
-- deleted_from_trashbin (suppression definitive)
-- file_renamed (renommer)
-- shared_user (partager)
-- login_attempt (tentative)
-- login_successful (reussi)
-- logout_occured (deconnexion)
-- user_created (inscription)
+These two absences determined the entire detection approach, and the reasoning matters more than the code:
 
-Double stockage:
-- PostgreSQL: requetes SQL
-- logs.json: backup temps reel
+**No labels means no supervised learning.** A classifier trained on our own rule-derived classifications would only reproduce those rules through a model. That is ML as decoration. We rejected it explicitly rather than dressing up a rule engine as machine learning.
 
-<img width="1648" height="700" alt="image" src="https://github.com/user-attachments/assets/d5eae21e-2a41-4dfd-ab28-65f08a4f28e9" />
+**No peer groups means no peer-group comparison.** Peer-group detection — flagging behavior that is rare across similar users — is one of the strongest UEBA techniques. It was structurally unavailable. The data contained no group structure to exploit, and inventing pseudo-groups from two users would have been dishonest.
 
-<img width="1562" height="863" alt="image" src="https://github.com/user-attachments/assets/a67ca12f-7932-45d7-8a00-745152ff77d0" />
+What remained viable was **per-user, unsupervised anomaly detection**: comparing each user against their own history. That is the strongest detector possible under these constraints, and it is what was built.
 
-## Detection d'anomalies
+The dataset gave us two users, chosen for contrast:
 
-### Phase 1: Detection Journaliere (Batch)
+- **alice** — stable, consistent activity profile
+- **bob** — volatile, irregular activity profile
 
-Deux methodes complementaires analysees chaque nuit a minuit:
+The contrast was not incidental. A detector that only sees one user cannot be tested for over-sensitivity. Comparing a stable user against a volatile one shows whether the detection logic picks up genuine anomalies or just noise.
 
-**Baseline probabiliste**
-- Calcule le 95eme percentile de chaque feature sur les donnees historiques
-- Compare chaque jour avec cette baseline
-- Un jour est flagge si une feature depasse son seuil
-- Score = somme des depassements
+## The platform
 
-**Isolation Forest**
-- Modele non supervise base sur des arbres de decision aleatoires
-- Contamination fixee a 5%
-- Detecte les patterns structurellement anormaux
-- Produit un score d'anomalie continu
+A functional cloud storage application: upload, view, edit, download, rename, share, soft-delete, restore, permanent delete. JWT authentication with role-based access. File version tracking with hashes. Security headers.
 
-**Regles de classification** (ordre de specificite):
+Every user action emits a **CLUE-format log entry** with 8 fields:
 
-- RANSOMWARE: pic simultane de file_written et unique_paths
-- DATA_THEFT: pic simultane de file_accessed et unique_paths
-- ACCOUNT_TAKEOVER: pic de login_attempt avec taux de succes inferieur a 50%
-- BRUTE_FORCE: pic de login_attempt avec taux de succes a 0%
-- DIRECTORY_TRAVERSAL: pic de unique_dir1 ou unique_dir2
-- OFF_HOURS: pic de night_fraction
-- MASS_ACTIVITY: pic de events_total uniquement
+    id, time, uid, uid_type, type, params (JSONB), is_local_ip, role, location (JSONB)
 
-**Niveaux de confiance:**
-- HIGH: Flagge par les deux methodes
-- MEDIUM: Flagge uniquement par la baseline
-- LOW: Flagge uniquement par Isolation Forest (investigation manuelle recommandee)
+Twelve event types are logged, from `file_accessed` and `file_written` through `login_attempt`, `login_successful`, and `user_created`. Logs are written to PostgreSQL for querying and mirrored to `logs.json` in real time.
 
-### Phase 2: Detection Temps Reel (Sliding Windows)
+<img width="1648" height="700" alt="CLUE logs" src="https://github.com/user-attachments/assets/d5eae21e-2a41-4dfd-ab28-65f08a4f28e9" />
 
-Detection instantanee sur fenetres glissantes, declenchee a chaque ecriture de log:
+## The detection layer
 
-- Ransomware: file_written dans une fenetre d'une minute
-- Mass Deletion: file_deleted dans une fenetre de cinq minutes
-- Malicious Upload: file_created dans une fenetre de cinq minutes
-- Account Takeover: file_accessed dans les soixante secondes apres un login_successful
+### Daily analysis
 
-**Multiplicateurs adaptatifs:**
-- Utilisateur stable (Alice): seuil = historique_max x 2
-- Utilisateur instable (Bob): seuil = historique_max x 3
+Raw logs are aggregated into **daily feature vectors** per user across 14 features spanning volume, temporal patterns, path diversity, file activity, authentication, and path reuse.
 
-Le maximum historique est calcule sur les donnees de la table des logs. Les alertes sont stockees dans une table avec une fenetre glissante de sept jours.
+Two complementary detectors run every night at midnight:
 
-<img width="1589" height="847" alt="image" src="https://github.com/user-attachments/assets/1eba1b8f-82ff-4fea-97d9-dae7a9c7eec1" />
+**Probabilistic baseline.** Computes a p95 threshold per feature across the user's history. Each day is scored as the sum of excess ratios for every feature exceeding its threshold, and produces a `top_contributors` string explaining which features deviated and by how much.
 
-### Features Journalieres
+**Isolation Forest.** 100 estimators, contamination 5%, on standardized feature vectors. Flags days whose feature *combinations* are structurally unusual, catching anomalies that no single feature threshold would reveal.
 
-- events_total: nombre total d'evenements
-- active_hours: nombre d'heures differentes avec activite
-- night_fraction: proportion d'evenements entre 0h et 5h
-- unique_types: nombre de types d'evenements differents
-- file_accessed: nombre d'acces fichiers
-- file_written: nombre d'ecritures fichiers
-- login_attempt: nombre de tentatives de connexion
-- login_successful: nombre de connexions reussies
-- login_success_rate: taux de reussite des connexions
-- unique_paths: nombre de chemins fichiers differents
-- path_depth_mean: profondeur moyenne des chemins
-- unique_dir1: nombre de dossiers de niveau 1 differents
-- unique_dir2: nombre de dossiers de niveau 2 differents
-- path_reuse_ratio: ratio de reutilisation des chemins
+The two are complementary by design. The baseline catches explicit violations. Isolation Forest catches unusual combinations of individually normal features. A day flagged by both is HIGH confidence; a day flagged by the baseline alone is MEDIUM; a day flagged only by Isolation Forest is LOW and recommends manual investigation.
 
-### Base de donnees Detection
+### Attack classification
 
-**daily_anomalies**
-- Stocke les resultats de l'analyse quotidienne (minuit)
-- Uniquement les jours anormaux
-- Contient: date, user_id, scores, attack_type, confidence, analyst_notes
+Because the data has no labels, the step from "anomalous" to "what kind of attack" is inherently rule-based. This is not a shortcut — it is the state of the art for label-free detection. The classifier maps feature spikes to attack types in order of specificity:
 
-**rare_events_alerts**
-- Stocke les alertes temps reel
-- Fenetre glissante de sept jours
-- Contient: user_id, event_type, count_value, threshold_value, multiplier
+- **RANSOMWARE** — simultaneous spike in `file_written` and `unique_paths`
+- **DATA_THEFT** — simultaneous spike in `file_accessed` and `unique_paths`
+- **ACCOUNT_TAKEOVER** — `login_attempt` spike with success rate below 50%
+- **BRUTE_FORCE** — `login_attempt` spike with 0% success rate
+- **BUSY_DAY** — `login_attempt` spike with 80%+ success rate
+- **DIRECTORY_TRAVERSAL** — spike in `unique_dir1` or `unique_dir2`
+- **OFF_HOURS** — spike in `night_fraction`
+- **MASS_ACTIVITY** — spike in `events_total` alone
 
-### Jobs Automatises
+The **BUSY_DAY** class deserves a note. High login volume with high success rate is legitimate activity, not an attack. Without this class, the detector would mislabel ordinary busy days as brute force — one of the most common false positives in naive anomaly detection. Building a category for it means the system knows the difference between "unusual" and "hostile."
 
-- Minuit: analyse de la veille (baseline + Isolation Forest)
-- Trente secondes: rafraichissement du panneau Real-Time
-- Quotidien: nettoyage des alertes de plus de sept jours
+Before any flagged day is confirmed, verification functions cross-check it against the user's own historical median rather than a fixed threshold. A day is only confirmed if it is anomalous *relative to that user's own normal variation*.
 
-## Interface Admin Detection
+<img width="1562" height="863" alt="Detection" src="https://github.com/user-attachments/assets/a67ca12f-7932-45d7-8a00-745152ff77d0" />
 
-Quatre panneaux par utilisateur:
+### Real-time detection
 
-1. Real-Time - Alertes fenetres glissantes (auto-refresh)
-2. Today - Analyse cumulative de la journee (bouton manuel)
-3. Yesterday - Resultat final de la veille
-4. Historical - Historique des jours anormaux
+Alongside the nightly batch analysis, a real-time layer detects attacks as they happen using **sliding windows**, triggered on every log write:
 
-## API Endpoints
+- **Ransomware** — `file_written` events in a 60-second window (encryption is fast)
+- **Mass Deletion** — `file_deleted` events in a 300-second window (deletion spreads over minutes)
+- **Malicious Upload** — `file_created` events in a 300-second window
+- **Account Takeover** — `file_accessed` events within 60 seconds of a `login_successful` (takeover happens immediately after login)
 
-Authentification:
-- POST /register
-- POST /login
-- POST /logout
-- GET /me
+Window lengths were chosen by reasoning about attack mechanics, not by parameter search — there is no theoretically correct window, only windows that match the timescale of the behavior being detected.
 
-Fichiers (JWT requis):
-- POST /files/upload
-- GET /files/list
-- GET /files/view/{filename}
-- POST /files/edit/{filename}
-- GET /files/download/{filename}
-- PUT /files/rename/{old}
-- POST /files/{filename}/share
-- DELETE /files/{filename}
-- POST /files/{filename}/restore
-- GET /files/trash
+Each window fires when the event count exceeds the user's historical maximum multiplied by a per-user multiplier (alice: ×2, bob: ×3). The historical maximum comes from the logs table; alerts are stored with a seven-day sliding retention.
 
-Admin Detection (role admin requis):
-- GET /admin/detection
-- GET /admin/detection/history/{user}
-- GET /admin/detection/yesterday/{user}
-- GET /admin/detection/today/cumulative/{user}
-- POST /admin/detection/today/trigger
-- GET /admin/detection/realtime/alerts
+<img width="1589" height="847" alt="Real-time panel" src="https://github.com/user-attachments/assets/1eba1b8f-82ff-4fea-97d9-dae7a9c7eec1" />
 
-Admin Database (role admin requis):
-- GET /admin/database
-- GET /admin/api/stats
-- GET /admin/api/table/{name}
-- DELETE /admin/api/table/{name}/{id}
+## Evaluation under no labels
 
-## Securite
+Because the dataset has no ground truth, precision and recall cannot be reported honestly. Evaluation instead relies on:
 
-- Mots de passe: bcrypt avec sel
-- Tokens JWT: localStorage + header Authorization
-- Headers de securite: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection
-- Roles: user (standard), admin (acces detection + database)
+- **Injection testing.** Six calibrated attack patterns (ransomware, data theft, account takeover, brute force, directory traversal, mass activity) are generated against the live system to verify each is detected.
+- **Consistency analysis.** The same anomalies should be flagged across different contamination parameters.
+- **Interpretability.** Every flagged day carries its `top_contributors`, explaining exactly why it was flagged.
 
-Limitations (POC): Pas de HTTPS, pas de rate limiting, localStorage visible
+This is weaker than supervised evaluation. It is also the only honest option given the data, and it is documented as such rather than papered over with metrics that would not mean anything.
 
-## Commandes Docker
+## What this project demonstrates
 
-Demarrer: docker compose up -d
-Arreter: docker compose down
-Logs API: docker logs ppp_api --tail 50
-Redemarrer API: docker compose restart api
-Reconstruire: docker compose build api
-Entrer PostgreSQL: docker exec -it ppp_postgres psql -U ueba_user -d ueba_db
+- Full-stack engineering with clean layered architecture (routes → controllers → services → models) on FastAPI, PostgreSQL, Docker, and JWT
+- Designing an unsupervised detection system that combines a probabilistic baseline with Isolation Forest, and reasoning about when each catches what
+- Making methodological choices under real constraints — no labels, no peer groups — and refusing to fake what the data cannot support
+- Distinguishing legitimate high-volume activity from attack behavior through an explicit false-positive class
+- Building real-time detection with sliding windows and per-user adaptive thresholds on top of a batch pipeline
 
-## URLs
+## Known limitations
+
+- Sliding window state is in memory and lost on restart; production needs Redis
+- Per-user multipliers are hardcoded rather than derived from each user's historical variance
+- Attack classification is rule-based (a consequence of label-free data, not of method)
+- No peer-group analysis (the dataset has no group structure)
+- JWT stored in localStorage; production should use httpOnly cookies with CSRF protection
+- No rate limiting on auth or upload endpoints
+- `--reload` in the Dockerfile; production should use Gunicorn with Uvicorn workers
+- Schema managed with `CREATE TABLE IF NOT EXISTS`; production should use Alembic migrations
+
+## Running it
+
+    docker compose up -d
 
 - Application: http://localhost:8000
-- Documentation API: http://localhost:8000/docs
-- Adminer: http://localhost:8080 (postgres / ueba_user / ueba_pass / ueba_db)
+- API docs: http://localhost:8000/docs
+- Adminer (database): http://localhost:8080
 
-## Structure du projet
+Demo accounts: `alice / password123`, `bob / password456`
 
-    ppp/
-    ├── app/
-    │   ├── controllers/      # Logique metier (AuthController, FileController)
-    │   ├── services/         # Operations (FileService, DetectionService, RealtimeDetection)
-    │   ├── models/           # Acces base de donnees (UserModel, FileModel)
-    │   ├── routes/           # Endpoints HTTP (auth, files, admin, detection, web)
-    │   ├── utils/            # Utilitaires (logger, security)
-    │   ├── templates/        # Pages HTML Jinja2
-    │   ├── scripts/          # Scripts utilitaires (import, simulation, backfill)
-    │   ├── static/           # Fichiers statiques (images, CSS)
-    │   ├── uploads/          # Fichiers utilisateurs (volume Docker)
-    │   ├── logs/             # Logs JSON (volume Docker)
-    │   ├── main.py           # Point d'entree FastAPI
-    │   ├── config.py         # Configuration (base de donnees, secrets)
-    │   ├── Dockerfile        # Build image Docker
-    │   └── requirements.txt  # Dependances Python
-    ├── logs/                 # Volume externe pour logs.json
-    ├── uploads/              # Volume externe pour fichiers utilisateurs
-    ├── docker-compose.yml    # Orchestration Docker
-    └── README.md             # Documentation
+## Method note
 
-## Scripts Disponibles
-
-- import_clue_logs.py: Importe le dataset CLUE
-- insert_notebook_results.py: Insere les resultats du notebook
-- simulate_daily_attacks.py: Simule les attaques pour la detection journaliere
-- test_realtime.py: Teste la detection temps reel
-- get_thresholds.py: Affiche les seuils historiques
+This project began with raw CLUE logs from a Dropbox-replica system and inferred the platform that would produce them. The platform was built to match that behavioral trace, and the detection layer was built on top. The logs are therefore not a side effect of the application — they are its starting point.
